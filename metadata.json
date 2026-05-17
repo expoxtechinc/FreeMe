@@ -1,0 +1,7 @@
+{
+  "name": "FreeMe",
+  "description": "A motivational quote app with daily inspiration and customizable reminders, built for offline focus.",
+  "requestFramePermissions": ["notifications"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
