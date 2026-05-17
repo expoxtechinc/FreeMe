@@ -41,9 +41,20 @@ export default function App() {
     return localStorage.getItem('customNotifBody') || 'Your daily spark of liberation awaits.';
   });
 
+  const [isSOSLoading, setIsSOSLoading] = useState(false);
+  const [sosMessage, setSosMessage] = useState<string | null>(null);
+
   const [isQuoteVisible, setIsQuoteVisible] = useState(true);
   const [copied, setCopied] = useState(false);
   const [isListening, setIsListening] = useState(false);
+
+  const toggleFavorite = (quoteId: string) => {
+    const nextFavorites = favorites.includes(quoteId)
+      ? favorites.filter(id => id !== quoteId)
+      : [...favorites, quoteId];
+    setFavorites(nextFavorites);
+    localStorage.setItem('favorites', JSON.stringify(nextFavorites));
+  };
 
   const addHabit = async (name: string, type: 'sobriety' | 'habit') => {
     setIsGeneratingNarrative(true);
@@ -77,6 +88,28 @@ export default function App() {
     setIsSettingsOpen(false);
     setViewMode('tracker');
     setNewHabitGoal("");
+  };
+
+  const handleSOS = async () => {
+    setIsSOSLoading(true);
+    setSosMessage(null);
+    try {
+      const response = await fetch('/api/gemini/generate-narrative', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          habitName: "active urge / crisis", 
+          category: 'custom', 
+          goal: "Immediate grounding and crisis intervention. Provide 3 quick, powerful steps to breath and stay strong." 
+        })
+      });
+      const data = await response.json();
+      setSosMessage(data.narrative);
+    } catch (err) {
+      setSosMessage("Breathe deeply. You have survived every hard day until now. This urge is temporary, but your freedom is permanent. Stay strong.");
+    } finally {
+      setIsSOSLoading(false);
+    }
   };
 
   const deleteHabit = (id: string) => {
@@ -386,6 +419,45 @@ export default function App() {
                 </button>
               </div>
 
+              {/* SOS Sanctuary Button */}
+              <div className="mb-12">
+                 <button 
+                  onClick={handleSOS}
+                  className="w-full p-8 rounded-[2.5rem] bg-red-50 border-2 border-red-100 flex items-center justify-between group hover:bg-red-500 hover:border-red-500 transition-all duration-500"
+                 >
+                    <div className="text-left">
+                       <h3 className="text-2xl font-serif italic text-red-600 group-hover:text-white transition-colors">SOS Sanctuary</h3>
+                       <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-red-400 group-hover:text-red-100 transition-colors">Emergency AI Intervention</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                       {isSOSLoading && <RefreshCw className="w-6 h-6 text-red-500 group-hover:text-white animate-spin" />}
+                       <Shield className="w-8 h-8 text-red-500 group-hover:text-white" />
+                    </div>
+                 </button>
+
+                 <AnimatePresence>
+                    {sosMessage && (
+                      <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-4 p-8 bg-white border border-red-100 rounded-[2rem] shadow-xl relative overflow-hidden"
+                      >
+                         <div className="absolute top-0 left-0 w-1 h-full bg-red-500" />
+                         <p className="text-lg font-serif italic text-brand-text/70 leading-relaxed">
+                            {sosMessage}
+                         </p>
+                         <button 
+                          onClick={() => setSosMessage(null)}
+                          className="mt-6 text-[10px] uppercase tracking-widest font-bold text-red-400 hover:text-red-600 transition-colors"
+                         >
+                          Close SOS Signal
+                         </button>
+                      </motion.div>
+                    )}
+                 </AnimatePresence>
+              </div>
+
               {habits.length === 0 ? (
                 <div className="py-24 border-2 border-dashed border-brand-text/10 rounded-[3rem] flex flex-col items-center justify-center text-center">
                   <div className="w-20 h-20 rounded-full bg-brand-text/5 flex items-center justify-center mb-6">
@@ -512,7 +584,7 @@ export default function App() {
                         {currentQuote.author}
                       </p>
                     </div>
-                    {!viewMode === 'zen' && (
+                    {viewMode !== 'zen' && (
                       <div className="flex items-center gap-2">
                         <span className="text-[9px] uppercase tracking-[0.3em] font-bold opacity-30 px-3 py-1 border border-brand-text/5 rounded-full">
                           {currentQuote.category}
