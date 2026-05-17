@@ -13,7 +13,7 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'preferences' | 'about' | 'tracker'>('preferences');
-  const [viewMode, setViewMode] = useState<'canvas' | 'zen' | 'tracker' | 'vision' | 'breath'>('canvas');
+  const [viewMode, setViewMode] = useState<'feed' | 'zen' | 'dashboard' | 'vision' | 'breath'>('feed');
   const [showCategoryMenu, setShowCategoryMenu] = useState(false);
   const [isBreathActive, setIsBreathActive] = useState(false);
   const [breathPhase, setBreathPhase] = useState<'Inhale' | 'Hold' | 'Exhale'>('Inhale');
@@ -157,7 +157,7 @@ export default function App() {
     setHabits(nextHabits);
     localStorage.setItem('liberation_habits', JSON.stringify(nextHabits));
     setIsSettingsOpen(false);
-    setViewMode('tracker');
+    setViewMode('dashboard');
     setNewHabitGoal("");
   };
 
@@ -370,55 +370,41 @@ export default function App() {
       </div>
 
       {/* Top Navigation Rail */}
-      <header className="relative z-10 flex justify-between items-start p-8 md:p-12">
-        <div className="flex flex-col">
+      <header className="relative z-20 flex justify-between items-center p-6 md:p-10">
+        <div className="flex items-center gap-3">
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="flex items-center gap-4 mb-2"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-10 h-10 rounded-xl bg-white shadow-lg flex items-center justify-center p-1.5 border border-brand-text/5"
           >
-             <div className="w-12 h-12 rounded-2xl bg-white shadow-xl flex items-center justify-center p-2 border border-brand-text/5">
-                <img src={creatorInfo.logo} alt="FreeMe Logo" className="w-full h-full object-contain" />
-             </div>
-             <h1 className="text-4xl font-serif italic tracking-tighter text-brand-text">FreeMe</h1>
+             <img src={creatorInfo.logo} alt="FreeMe" className="w-full h-full object-contain" />
           </motion.div>
-          <span className="text-[10px] uppercase tracking-[0.3em] font-bold opacity-40 ml-[64px]">Daily Liberation</span>
+          <div>
+            <h1 className="text-2xl font-serif italic tracking-tighter text-brand-text leading-none mb-1">FreeMe</h1>
+            <p className="text-[8px] uppercase tracking-[0.2em] font-bold opacity-30">Sanctuary</p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-6">
-          {viewMode !== 'zen' && (
+        <div className="flex items-center gap-3">
+          {viewMode === 'feed' && (
             <div className="relative">
               <button 
                 onClick={() => setShowCategoryMenu(!showCategoryMenu)}
-                className="px-6 py-3 rounded-2xl bg-brand-text text-white text-[10px] uppercase tracking-[0.2em] font-bold shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+                className="w-10 h-10 rounded-xl bg-white border border-brand-text/5 flex items-center justify-center text-brand-text/60 hover:bg-brand-text hover:text-white transition-all shadow-sm"
               >
-                <LayoutGrid className="w-3 h-3" />
-                Wisdom Channels
+                <LayoutGrid className="w-4 h-4" />
               </button>
               
               <AnimatePresence>
                 {showCategoryMenu && (
                   <>
-                    <div 
-                      className="fixed inset-0 z-40 bg-white/5 backdrop-blur-[2px]" 
-                      onClick={() => setShowCategoryMenu(false)}
-                    />
+                    <div className="fixed inset-0 z-40" onClick={() => setShowCategoryMenu(false)} />
                     <motion.div 
-                      initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                      className="absolute top-full left-0 mt-3 w-64 max-h-[70vh] overflow-y-auto bg-white/95 backdrop-blur-xl border border-brand-text/5 rounded-[2rem] shadow-2xl p-4 z-50 hide-scrollbar"
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute top-full right-0 mt-2 w-56 max-h-[60vh] overflow-y-auto bg-white/95 backdrop-blur-xl border border-brand-text/5 rounded-2xl shadow-2xl p-2 z-50 hide-scrollbar"
                     >
-                      <div className="grid grid-cols-1 gap-1">
-                        <button
-                          onClick={() => {
-                            refreshQuote();
-                            setShowCategoryMenu(false);
-                          }}
-                          className="w-full text-left px-5 py-3 rounded-xl text-[10px] uppercase tracking-widest font-bold transition-all bg-emerald-500 text-white shadow-lg mb-2 flex items-center justify-between"
-                        >
-                          Surprise Me <RefreshCw className="w-3 h-3" />
-                        </button>
                         {getCategories().map((cat) => (
                           <button
                             key={cat}
@@ -426,7 +412,7 @@ export default function App() {
                               handleCategoryChange(cat);
                               setShowCategoryMenu(false);
                             }}
-                            className={`w-full text-left px-5 py-3 rounded-xl text-[10px] uppercase tracking-widest font-bold transition-all ${
+                            className={`w-full text-left px-4 py-2.5 rounded-lg text-[9px] uppercase tracking-widest font-bold transition-all ${
                               selectedCategory === cat 
                               ? "bg-brand-text text-white shadow-md" 
                               : "hover:bg-brand-text/5 text-brand-text/60"
@@ -435,7 +421,6 @@ export default function App() {
                             {cat}
                           </button>
                         ))}
-                      </div>
                     </motion.div>
                   </>
                 )}
@@ -443,74 +428,31 @@ export default function App() {
             </div>
           )}
 
-          {viewMode !== 'zen' && (
-            <div className="hidden md:flex flex-col items-end">
-              <span className="text-[10px] uppercase tracking-[0.2em] font-bold opacity-40 mb-1">Liberation Status</span>
-              <div className="flex items-center gap-2">
-                <Shield className="w-3 h-3 text-emerald-500" />
-                <span className="text-xs font-medium opacity-80 uppercase tracking-widest text-[9px]">
-                  {habits.length > 0 ? `${habits.length} Chains Broken` : "Vault Synchronized"}
-                </span>
-              </div>
-            </div>
-          )}
+          <button 
+            onClick={() => setShowSearch(true)}
+            className="w-10 h-10 rounded-xl bg-white border border-brand-text/5 flex items-center justify-center text-brand-text/60 hover:bg-brand-text hover:text-white transition-all shadow-sm"
+          >
+            <Search className="w-4 h-4" />
+          </button>
           
           <button 
-            onClick={() => setViewMode(prev => prev === 'zen' ? 'canvas' : 'zen')}
-            className={`w-12 h-12 btn-outline flex items-center justify-center border transition-all duration-500 rounded-2xl ${viewMode === 'zen' ? 'bg-brand-text text-white border-brand-text shadow-xl' : 'border-brand-text/10'}`}
-            title="Zen Focus Mode"
+            onClick={() => setViewMode(prev => prev === 'zen' ? 'feed' : 'zen')}
+            className={`w-10 h-10 rounded-xl border transition-all flex items-center justify-center ${viewMode === 'zen' ? 'bg-brand-text text-white border-brand-text shadow-lg' : 'bg-white border-brand-text/5 text-brand-text/60'}`}
           >
-            <Sparkles className="w-5 h-5" />
+            <Sparkles className="w-4 h-4" />
           </button>
 
-          {viewMode !== 'zen' && (
-            <>
-              <button 
-                onClick={() => setViewMode(prev => prev === 'breath' ? 'canvas' : 'breath')}
-                className={`w-12 h-12 btn-outline flex items-center justify-center border transition-all duration-500 rounded-2xl ${viewMode === 'breath' ? 'bg-emerald-500 text-white border-emerald-500 shadow-xl' : 'border-brand-text/10'}`}
-                title="Sacred Breath Tool"
-              >
-                <Clock className="w-5 h-5" />
-              </button>
-              <button 
-                onClick={() => setViewMode(prev => prev === 'vision' ? 'canvas' : 'vision')}
-                className={`w-12 h-12 btn-outline flex items-center justify-center border transition-all duration-500 rounded-2xl ${viewMode === 'vision' ? 'bg-brand-accent text-white border-brand-accent shadow-xl' : 'border-brand-text/10'}`}
-                title="Vision Board"
-              >
-                <Heart className="w-5 h-5" />
-              </button>
-              <button 
-                onClick={() => setViewMode(prev => prev === 'tracker' ? 'canvas' : 'tracker')}
-                className={`w-12 h-12 btn-outline flex items-center justify-center border transition-all duration-500 rounded-2xl ${viewMode === 'tracker' ? 'bg-brand-text text-white border-brand-text shadow-xl' : 'border-brand-text/10'}`}
-                title="Tracker Dashboard"
-              >
-                <Shield className="w-5 h-5" />
-              </button>
-              <button 
-                onClick={() => setShowSearch(true)}
-                className="w-12 h-12 btn-outline flex items-center justify-center border border-brand-text/10"
-                title="Search for Wisdom"
-              >
-                <Search className="w-5 h-5" />
-              </button>
-              <button 
-                onClick={() => {
-                  setActiveTab('preferences');
-                  setIsSettingsOpen(true);
-                }}
-                className="w-12 h-12 btn-outline flex items-center justify-center border border-brand-text/10"
-                title="Sanctuary Settings"
-              >
-                <Settings className="w-5 h-5" />
-              </button>
-            </>
-          )}
+          <button 
+            onClick={() => setIsSettingsOpen(true)}
+            className="w-10 h-10 rounded-xl bg-white border border-brand-text/5 flex items-center justify-center text-brand-text/60 hover:bg-brand-text hover:text-white transition-all shadow-sm"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
         </div>
       </header>
 
-      {/* Category Chips Container */}
       {/* Main Content Areas */}
-      <div className="flex-1 overflow-y-auto hide-scrollbar scroll-smooth">
+      <div className="flex-1 overflow-y-auto hide-scrollbar scroll-smooth pb-32">
         {viewMode === 'breath' ? (
           <motion.main 
             initial={{ opacity: 0 }}
@@ -602,28 +544,50 @@ export default function App() {
               )}
             </div>
           </motion.main>
-        ) : viewMode === 'tracker' ? (
+        ) : viewMode === 'dashboard' ? (
           <motion.main 
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="relative z-10 px-8 md:px-24 py-12"
+            className="relative z-10 px-6 md:px-24 py-6"
           >
-            <div className="max-w-6xl mx-auto">
-              <div className="flex items-center justify-between mb-12">
+            <div className="max-w-6xl mx-auto pb-20">
+              <div className="flex items-end justify-between mb-12">
                 <div>
-                  <h2 className="text-5xl font-serif italic mb-2">Freedom Tracker</h2>
-                  <p className="text-[10px] uppercase tracking-[0.4em] font-bold opacity-30">Monitoring Your Chains Broken</p>
+                  <p className="text-[10px] uppercase tracking-[0.4em] font-bold opacity-30 mb-2">Freedom Status</p>
+                  <h2 className="text-4xl md:text-5xl font-serif italic">My Dashboard</h2>
                 </div>
                 <button 
                   onClick={() => {
                     setActiveTab('tracker');
                     setIsSettingsOpen(true);
                   }}
-                  className="px-8 py-4 bg-brand-text text-white rounded-2xl flex items-center gap-3 shadow-xl hover:scale-105 active:scale-95 transition-all"
+                  className="w-14 h-14 bg-brand-text text-white rounded-3xl flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 transition-all"
                 >
-                  <Plus className="w-5 h-5" />
-                  <span className="text-xs uppercase tracking-widest font-bold">New Chain</span>
+                  <Plus className="w-7 h-7" />
                 </button>
+              </div>
+
+              {/* Quick Wisdom Card */}
+              <div className="mb-12 p-8 bg-brand-text text-white rounded-[3rem] shadow-2xl relative overflow-hidden group">
+                <div className="relative z-10">
+                  <span className="text-[10px] uppercase tracking-[0.3em] font-bold opacity-40 mb-4 block">Morning Reflection</span>
+                  <p className="text-xl md:text-2xl font-serif italic mb-6 leading-relaxed">
+                    "{quotes.find(q => q.id === 'Q' + (new Date().getDay() + 1))?.text || "What is one small victory you can celebrate today?"}"
+                  </p>
+                  <div className="flex items-center gap-4">
+                    <div className="flex -space-x-3">
+                       {habits.slice(0, 3).map((h, i) => (
+                         <div key={h.id} className={`w-10 h-10 rounded-full border-2 border-brand-text flex items-center justify-center ${getCategoryColor(h.category)}`}>
+                            {renderIcon(h.category)}
+                         </div>
+                       ))}
+                    </div>
+                    <p className="text-[10px] uppercase tracking-widest font-bold opacity-40">
+                      {habits.length} Active Liberation Chains
+                    </p>
+                  </div>
+                </div>
+                <Zap className="absolute top-1/2 right-[-20px] -translate-y-1/2 w-64 h-64 opacity-5 rotate-12 pointer-events-none" />
               </div>
 
               {/* SOS Sanctuary Button */}
@@ -755,7 +719,7 @@ export default function App() {
             </div>
           </motion.main>
         ) : (
-          <main className={`relative z-10 flex flex-col justify-center px-8 md:px-24 transition-all duration-1000 ${viewMode === 'zen' ? 'h-full pt-0' : 'h-[60vh] pt-12'}`}>
+          <main className={`relative z-10 flex flex-col justify-center px-8 md:px-24 transition-all duration-1000 ${viewMode === 'zen' ? 'h-full pt-0' : 'h-[60vh] pt-12 pb-32'}`}>
             <AnimatePresence mode="wait">
               {isQuoteVisible && (
                 <motion.div
@@ -779,9 +743,7 @@ export default function App() {
                   </div>
                   
                   <h2 className={`font-serif leading-[1.15] mb-12 relative text-brand-text transition-all duration-1000 text-center md:text-left ${viewMode === 'zen' ? 'text-5xl md:text-8xl' : 'text-4xl md:text-7xl'}`}>
-                    {currentQuote.text.split(' ').map((word, i) => (
-                      <span key={i} className={i % 8 === 3 ? "italic font-light opacity-80" : ""}>{word} </span>
-                    ))}
+                    {currentQuote.text}
                   </h2>
 
                   <div className={`flex items-center justify-between gap-6 max-w-2xl transition-opacity duration-1000 ${viewMode === 'zen' ? 'opacity-30' : 'opacity-100'}`}>
@@ -791,14 +753,25 @@ export default function App() {
                         {currentQuote.author}
                       </p>
                     </div>
-                    {viewMode !== 'zen' && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-[9px] uppercase tracking-[0.3em] font-bold opacity-30 px-3 py-1 border border-brand-text/5 rounded-full">
-                          {currentQuote.category}
-                        </span>
-                      </div>
-                    )}
                   </div>
+
+                  {viewMode !== 'zen' && (
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="mt-16 flex items-center gap-3"
+                    >
+                       <button onClick={() => refreshQuote()} className="px-8 py-4 rounded-2xl bg-brand-text text-white text-[10px] uppercase tracking-widest font-bold shadow-lg flex items-center gap-3">
+                          <RefreshCw className="w-4 h-4" /> Next Wisdom
+                       </button>
+                       <button onClick={handleShare} className="w-12 h-12 rounded-2xl border border-brand-text/10 flex items-center justify-center text-brand-text/40 hover:text-brand-text hover:border-brand-text/40 transition-all">
+                          <Share2 className="w-4 h-4" />
+                       </button>
+                       <button onClick={copyToClipboard} className="w-12 h-12 rounded-2xl border border-brand-text/10 flex items-center justify-center text-brand-text/40 hover:text-brand-text hover:border-brand-text/40 transition-all">
+                          {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                       </button>
+                    </motion.div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -868,50 +841,55 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Bottom Controls */}
-      <footer className="relative z-10 p-8 md:p-12 flex flex-col md:flex-row items-end md:items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => refreshQuote()}
-            className="flex items-center gap-3 px-8 py-5 btn-outline bg-white/50 backdrop-blur-sm group"
-          >
-            <RefreshCw className="w-4 h-4 group-active:rotate-180 transition-transform duration-700" />
-            <span className="text-xs uppercase tracking-widest font-bold">New Prospect</span>
-          </button>
-          
-          <button 
-            onClick={handleShare}
-            className="p-5 btn-outline bg-white/50 backdrop-blur-sm group hover:bg-brand-text hover:text-white"
-            title="Share Wisdom"
-          >
-            <Share2 className="w-5 h-5" />
-          </button>
-
-          <button 
-            onClick={copyToClipboard}
-            className="p-5 btn-outline bg-white/50 backdrop-blur-sm group hover:bg-brand-text hover:text-white"
-            title="Copy Text"
-          >
-            {copied ? <Check className="w-5 h-5 text-emerald-500" /> : <Copy className="w-5 h-5" />}
-          </button>
-        </div>
-
-        <div className="flex flex-col items-end">
-          <div 
-            onClick={() => {
-              setActiveTab('about');
-              setIsSettingsOpen(true);
-            }}
-            className="cursor-pointer group flex items-center gap-3 mb-2"
-          >
-            <p className="text-[10px] uppercase tracking-[0.2em] font-bold opacity-30 group-hover:opacity-60 transition-opacity">Creator: {creatorInfo.name}</p>
-            <div className="w-6 h-6 rounded-full overflow-hidden border border-brand-text/10 grayscale group-hover:grayscale-0 transition-all">
-              <img src={creatorInfo.photo} alt={creatorInfo.name} className="w-full h-full object-cover" />
-            </div>
+      {/* Global Metadata Footer (Hidden on mobile) */}
+      <footer className="fixed bottom-32 left-10 hidden xl:flex flex-col gap-2 p-2 pointer-events-none opacity-40 z-50">
+        <div 
+          onClick={() => {
+            setActiveTab('about');
+            setIsSettingsOpen(true);
+          }}
+          className="cursor-pointer group flex items-center gap-3 pointer-events-auto"
+        >
+          <div className="w-8 h-8 rounded-full overflow-hidden border border-brand-text/10 grayscale group-hover:grayscale-0 transition-all">
+            <img src={creatorInfo.photo} alt={creatorInfo.name} className="w-full h-full object-cover" />
           </div>
-          <p className="text-[10px] opacity-20 italic font-serif">A sanctuary for the liberated mind • Est 2024</p>
+          <div>
+            <p className="text-[8px] uppercase tracking-[0.2em] font-bold opacity-30 group-hover:opacity-60 transition-opacity">Creator</p>
+            <p className="text-[9px] font-bold text-brand-text">{creatorInfo.name}</p>
+          </div>
         </div>
       </footer>
+
+      {/* Bottom Navigation */}
+      {viewMode !== 'zen' && (
+        <nav className="fixed bottom-0 left-0 right-0 z-[60] p-6 flex justify-center pointer-events-none">
+          <motion.div 
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="bg-white/90 backdrop-blur-xl border border-brand-text/5 rounded-[2.5rem] shadow-2xl p-2 flex items-center gap-1 pointer-events-auto"
+          >
+             {[
+               { id: 'feed', icon: Sparkles, label: 'Feed' },
+               { id: 'dashboard', icon: LayoutGrid, label: 'Dashboard' },
+               { id: 'vision', icon: Heart, label: 'Board' },
+               { id: 'breath', icon: Clock, label: 'Tools' }
+             ].map((tab) => (
+               <button
+                 key={tab.id}
+                 onClick={() => setViewMode(tab.id as any)}
+                 className={`flex flex-col items-center gap-1.5 px-6 py-3 rounded-[2rem] transition-all duration-500 ${
+                   viewMode === tab.id 
+                   ? 'bg-brand-text text-white shadow-xl scale-105' 
+                   : 'text-brand-text/40 hover:text-brand-text hover:bg-brand-text/5'
+                 }`}
+               >
+                 <tab.icon className={`w-5 h-5 transition-transform duration-500 ${viewMode === tab.id ? 'scale-110' : ''}`} />
+                 <span className="text-[8px] uppercase tracking-[0.2em] font-bold">{tab.label}</span>
+               </button>
+             ))}
+          </motion.div>
+        </nav>
+      )}
 
       {/* Vertical Decorative Rail Right */}
       <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col items-center gap-16 pointer-events-none hidden lg:flex">
