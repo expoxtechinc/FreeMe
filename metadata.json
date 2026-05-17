@@ -1,6 +1,6 @@
 {
   "name": "FreeMe",
-  "description": "An advanced liberation sanctuary helping users overcome addictions (drugs, alcohol, habits) through the Freedom Tracker, Zen Mode, and 150+ curated wisdom keys. Created by Akin S. Sokpah.",
+  "description": "A comprehensive liberation sanctuary for body, soul, and spirit. Features include the Freedom Tracker, Health Sanctuary (Hydration, Steps, Sleep), Faith Center (Bible Navigator, AI Biblical Counsel), and AI-Powered SOS Crisis Intervention. Built for complete lifelong sovereignty.",
   "requestFramePermissions": ["notifications"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

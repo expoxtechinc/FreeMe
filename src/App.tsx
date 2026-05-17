@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useCallback, ChangeEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Quote, getDailyQuote, getRandomQuote, getCategories, creatorInfo, quotes, Habit, addictionCategories, AddictionType } from './lib/quotes';
-import { Bell, BellOff, RefreshCw, Settings, X, Check, Copy, Share2, Mic, MicOff, Info, ExternalLink, Heart, Search, Shield, Zap, Sparkles, Plus, Trash2, LayoutGrid, Clock, Flame, Wine, Coins, Smartphone, MonitorPause, ChevronRight, Calendar, Activity, Music, Volume2, Book, Cross, HelpCircle, Send, Bookmark, Star, ChevronLeft, ListChecks, Mountain, TrendingUp, BookOpen, PenLine, CloudRain } from 'lucide-react';
+import { Bell, BellOff, RefreshCw, Settings, X, Check, Copy, Share2, Mic, MicOff, Info, ExternalLink, Heart, Search, Shield, Zap, Sparkles, Plus, Trash2, LayoutGrid, Clock, Flame, Wine, Coins, Smartphone, MonitorPause, ChevronRight, Calendar, Activity, Music, Volume2, Book, Cross, HelpCircle, Send, Bookmark, Star, ChevronLeft, ListChecks, Mountain, TrendingUp, BookOpen, PenLine, CloudRain, Droplets, Moon, Footprints, Sandwich, Stethoscope, Dna, BrainCircuit } from 'lucide-react';
 import { bibleBooks, foundationsPlan, ReadingPlanDay } from './lib/bibleData';
 
 export default function App() {
@@ -14,12 +14,48 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'preferences' | 'about' | 'tracker'>('preferences');
-  const [viewMode, setViewMode] = useState<'feed' | 'zen' | 'dashboard' | 'vision' | 'breath' | 'faith'>('feed');
+  const [viewMode, setViewMode] = useState<'feed' | 'zen' | 'dashboard' | 'vision' | 'breath' | 'faith' | 'health'>('feed');
   const [showCategoryMenu, setShowCategoryMenu] = useState(false);
   const [isBreathActive, setIsBreathActive] = useState(false);
   const [breathPhase, setBreathPhase] = useState<'Inhale' | 'Hold' | 'Exhale'>('Inhale');
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  
+  // Health System State
+  const [healthStats, setHealthStats] = useState(() => {
+    const saved = localStorage.getItem('liberation_health_stats');
+    const stats = saved ? JSON.parse(saved) : {
+      water: 0,
+      steps: 0,
+      sleep: 0,
+      lastUpdated: new Date().toDateString()
+    };
+    
+    // Daily Reset logic
+    if (stats.lastUpdated !== new Date().toDateString()) {
+      return {
+        water: 0,
+        steps: 0,
+        sleep: 0,
+        lastUpdated: new Date().toDateString()
+      };
+    }
+    return stats;
+  });
+
+  const [healthPrescription, setHealthPrescription] = useState<{body: string, soul: string, spirit: string} | null>(null);
+  const [isHealthLoading, setIsHealthLoading] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('liberation_health_stats', JSON.stringify(healthStats));
+  }, [healthStats]);
+
+  const updateHealthStat = (key: keyof typeof healthStats, value: number) => {
+    setHealthStats(prev => ({
+      ...prev,
+      [key]: prev[key] + value
+    }));
+  };
   
   const [habits, setHabits] = useState<Habit[]>(() => {
     return JSON.parse(localStorage.getItem('liberation_habits') || '[]');
@@ -120,6 +156,42 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [isBreathActive]);
 
+  const getHealthPrescription = async () => {
+    setIsHealthLoading(true);
+    try {
+      const response = await fetch('/api/gemini/generate-narrative', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          habitName: "Holistic Health Review", 
+          category: 'health', 
+          goal: `Current Stats: ${healthStats.water} glasses of water, ${healthStats.steps} steps, ${healthStats.sleep} hours sleep. Provide 3 short, powerful instructions for Body, Soul, and Spirit to maintain divine vitality today.` 
+        })
+      });
+      const data = await response.json();
+      // Parsing the narrative into sections if possible, otherwise providing formatted string
+      const narrative = data.narrative || "";
+      const body = narrative.match(/Body:? (.*?)(?=Soul:?|$)/si)?.[1] || "Nourish with living foods and clean water.";
+      const soul = narrative.match(/Soul:? (.*?)(?=Spirit:?|$)/si)?.[1] || "Guard your gates; focus on peace and gratitude.";
+      const spirit = narrative.match(/Spirit:? (.*?)$/si)?.[1] || "Abide in the vine; spend time in sacred silence.";
+      
+      setHealthPrescription({ body, soul, spirit });
+    } catch (err) {
+      setHealthPrescription({
+        body: "Hydrate and move your vessel. Your body is a temple of the Holy Spirit.",
+        soul: "Find quietness. Command your emotions to align with Truth.",
+        spirit: "Rejoice always. Pray without ceasing. Give thanks in all things."
+      });
+    } finally {
+      setIsHealthLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (viewMode === 'health' && !healthPrescription) {
+      getHealthPrescription();
+    }
+  }, [viewMode]);
   const toggleFavorite = (quoteId: string) => {
     const nextFavorites = favorites.includes(quoteId)
       ? favorites.filter(id => id !== quoteId)
@@ -562,12 +634,181 @@ export default function App() {
       </header>
 
       {/* Main Content Areas */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar scroll-smooth pb-32">
-        {viewMode === 'faith' ? (
+      <div className="flex-1 overflow-y-auto custom-scrollbar scroll-smooth">
+        <AnimatePresence mode="wait">
+        {viewMode === 'health' ? (
           <motion.main 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="relative z-10 px-6 md:px-24 py-8 max-w-7xl mx-auto custom-scrollbar"
+            key="health"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="px-6 md:px-24 py-12 max-w-7xl mx-auto pb-48 pt-24"
+          >
+            <div className="text-center mb-24">
+              <div className="inline-flex items-center justify-center w-24 h-24 rounded-[2.5rem] bg-emerald-50 mb-8 border border-emerald-100 shadow-sm">
+                 <Stethoscope className="w-12 h-12 text-emerald-500" />
+              </div>
+              <h2 className="editorial-title text-6xl md:text-7xl mb-6">Health Sanctuary</h2>
+              <p className="caps-label">Your body is a temple of the living God</p>
+            </div>
+
+            {/* Vitals Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
+               {/* Water */}
+               <div className="bento-card bg-blue-50/30 border-blue-100 group">
+                  <div className="flex justify-between items-start mb-10">
+                    <div className="p-4 bg-blue-500 text-white rounded-2xl shadow-lg">
+                      <Droplets className="w-6 h-6" />
+                    </div>
+                    <span className="text-3xl font-serif italic text-blue-600">{healthStats.water} <span className="text-sm opacity-50">glasses</span></span>
+                  </div>
+                  <h3 className="editorial-title text-2xl mb-4 text-blue-900">Hydration</h3>
+                  <div className="flex gap-2">
+                    <button onClick={() => updateHealthStat('water', 1)} className="flex-1 py-3 bg-blue-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-blue-700 transition-all">+ 1 Glass</button>
+                    <button onClick={() => updateHealthStat('water', -1)} className="p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-all"><X className="w-4 h-4" /></button>
+                  </div>
+               </div>
+
+               {/* Steps */}
+               <div className="bento-card bg-emerald-50/30 border-emerald-100 group">
+                  <div className="flex justify-between items-start mb-10">
+                    <div className="p-4 bg-emerald-500 text-white rounded-2xl shadow-lg">
+                      <Footprints className="w-6 h-6" />
+                    </div>
+                    <span className="text-3xl font-serif italic text-emerald-600">{healthStats.steps.toLocaleString()} <span className="text-sm opacity-50">steps</span></span>
+                  </div>
+                  <h3 className="editorial-title text-2xl mb-4 text-emerald-900">Movement</h3>
+                  <div className="flex gap-2">
+                    <button onClick={() => updateHealthStat('steps', 1000)} className="flex-1 py-3 bg-emerald-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-700 transition-all">+ 1k Steps</button>
+                    <button onClick={() => updateHealthStat('steps', -1000)} className="p-3 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-100 transition-all"><RefreshCw className="w-4 h-4" /></button>
+                  </div>
+               </div>
+
+               {/* Sleep */}
+               <div className="bento-card bg-purple-50/30 border-purple-100 group">
+                  <div className="flex justify-between items-start mb-10">
+                    <div className="p-4 bg-purple-500 text-white rounded-2xl shadow-lg">
+                      <Moon className="w-6 h-6" />
+                    </div>
+                    <span className="text-3xl font-serif italic text-purple-600">{healthStats.sleep} <span className="text-sm opacity-50">hours</span></span>
+                  </div>
+                  <h3 className="editorial-title text-2xl mb-4 text-purple-900">Rest</h3>
+                  <div className="flex gap-2">
+                    <button onClick={() => updateHealthStat('sleep', 1)} className="flex-1 py-3 bg-purple-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-purple-700 transition-all">+ 1 Hour</button>
+                    <button onClick={() => setHealthStats(prev => ({...prev, sleep: 0}))} className="p-3 bg-purple-50 text-purple-600 rounded-xl hover:bg-purple-100 transition-all"><RefreshCw className="w-4 h-4" /></button>
+                  </div>
+               </div>
+            </div>
+
+            {/* Holistic Rx */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
+               <div className="md:col-span-12">
+                  <div className="p-16 bento-card bg-brand-text text-white shadow-2xl relative overflow-hidden">
+                    <div className="relative z-10 max-w-4xl">
+                      <div className="flex items-center gap-6 mb-12">
+                         <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center">
+                            <BrainCircuit className="w-8 h-8 text-white" />
+                         </div>
+                         <div>
+                            <h3 className="editorial-title text-4xl text-white">Holistic Prescription</h3>
+                            <p className="caps-label text-white/40">AI-Guided Vitality Protocol</p>
+                         </div>
+                         <button 
+                          onClick={getHealthPrescription}
+                          className="ml-auto w-12 h-12 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
+                         >
+                            <RefreshCw className={`w-5 h-5 text-white ${isHealthLoading ? 'animate-spin' : ''}`} />
+                         </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                         <div className="space-y-4">
+                            <div className="flex items-center gap-3">
+                               <div className="w-8 h-px bg-white/20" />
+                               <p className="caps-label text-white/50">The Body</p>
+                            </div>
+                            <p className="text-lg font-serif italic text-white/80 leading-relaxed min-h-[80px]">
+                               {isHealthLoading ? "Analyzing physical vessel..." : healthPrescription?.body}
+                            </p>
+                         </div>
+                         <div className="space-y-4">
+                            <div className="flex items-center gap-3">
+                               <div className="w-8 h-px bg-white/20" />
+                               <p className="caps-label text-white/50">The Soul</p>
+                            </div>
+                            <p className="text-lg font-serif italic text-white/80 leading-relaxed min-h-[80px]">
+                               {isHealthLoading ? "Reviewing emotional baseline..." : healthPrescription?.soul}
+                            </p>
+                         </div>
+                         <div className="space-y-4">
+                            <div className="flex items-center gap-3">
+                               <div className="w-8 h-px bg-white/20" />
+                               <p className="caps-label text-white/50">The Spirit</p>
+                            </div>
+                            <p className="text-lg font-serif italic text-white/80 leading-relaxed min-h-[80px]">
+                               {isHealthLoading ? "Connecting with the Divine..." : healthPrescription?.spirit}
+                            </p>
+                         </div>
+                      </div>
+                    </div>
+                    <Dna className="absolute -bottom-20 -right-20 w-96 h-96 opacity-5 rotate-45 pointer-events-none" />
+                  </div>
+               </div>
+
+               {/* Health Tips / Wisdom */}
+               <div className="md:col-span-8">
+                  <div className="bento-card">
+                    <h3 className="editorial-title text-2xl mb-10 pb-6 border-b border-brand-text/5">Pillars of Life</h3>
+                    <div className="space-y-10">
+                       <div className="flex gap-8 group">
+                          <div className="w-16 h-16 rounded-2xl bg-brand-text/5 flex items-center justify-center shrink-0 group-hover:bg-brand-text transition-colors">
+                             <Sandwich className="w-8 h-8 text-brand-text/20 group-hover:text-white transition-colors" />
+                          </div>
+                          <div>
+                             <h4 className="editorial-title text-xl mb-2">Living Nutrition</h4>
+                             <p className="text-base font-serif italic text-brand-text/50 leading-relaxed">
+                               Focus on "living foods"—those closest to their natural state. Raw greens, fruits, and seeds hold the electrical vitality your cells crave.
+                             </p>
+                          </div>
+                       </div>
+                       <div className="flex gap-8 group">
+                          <div className="w-16 h-16 rounded-2xl bg-brand-text/5 flex items-center justify-center shrink-0 group-hover:bg-brand-text transition-colors">
+                             <Activity className="w-8 h-8 text-brand-text/20 group-hover:text-white transition-colors" />
+                          </div>
+                          <div>
+                             <h4 className="editorial-title text-xl mb-2">Temple Maintenance</h4>
+                             <p className="text-base font-serif italic text-brand-text/50 leading-relaxed">
+                               Stagnant water becomes toxic; a stagnant body does the same. Move to flush the lymphatic system and keep the breath of life flowing.
+                             </p>
+                          </div>
+                       </div>
+                    </div>
+                  </div>
+               </div>
+
+               <div className="md:col-span-4">
+                  <div className="bento-card bg-emerald-600 text-white h-full flex flex-col justify-between">
+                     <div>
+                       <h3 className="editorial-title text-2xl mb-4">Daily Goal</h3>
+                       <p className="text-4xl font-serif italic mb-2">80<span className="text-xl opacity-50">%</span></p>
+                       <p className="caps-label text-white/50">Vitality Index</p>
+                     </div>
+                     <div className="pt-10">
+                        <p className="text-xs font-serif italic opacity-40 leading-relaxed">
+                          "I wish above all things that thou mayest prosper and be in health, even as thy soul prospereth." (3 John 1:2)
+                        </p>
+                     </div>
+                  </div>
+               </div>
+            </div>
+          </motion.main>
+        ) : viewMode === 'faith' ? (
+          <motion.main 
+            key="faith"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="relative z-10 px-6 md:px-24 py-12 max-w-7xl mx-auto pb-48 pt-24"
           >
             {/* Faith Sanctuary Header */}
             <div className="text-center mb-16">
@@ -961,10 +1202,10 @@ export default function App() {
         ) : viewMode === 'vision' ? (
           <motion.main 
             key="vision"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="px-6 md:px-24 py-12 max-w-7xl mx-auto custom-scrollbar h-full overflow-y-auto pb-48"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="px-6 md:px-24 py-12 max-w-7xl mx-auto pb-48 pt-24"
           >
             <div className="text-center mb-24">
               <div className="inline-flex items-center justify-center w-24 h-24 rounded-[2.5rem] bg-brand-text/5 mb-8">
@@ -1025,7 +1266,7 @@ export default function App() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="px-6 md:px-24 py-12 max-w-7xl mx-auto custom-scrollbar h-full overflow-y-auto pb-48 relative z-10"
+            className="px-6 md:px-24 py-12 max-w-7xl mx-auto pb-48 relative z-10 pt-24"
           >
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-20">
               <div>
@@ -1231,7 +1472,13 @@ export default function App() {
             </div>
           </motion.main>
         ) : (
-          <main className={`relative z-10 flex flex-col justify-center px-6 md:px-24 transition-all duration-1000 ${viewMode === 'zen' ? 'h-full pt-0' : 'min-h-[60vh] md:min-h-[70vh] pt-20 pb-32'}`}>
+          <motion.main 
+            key="feed"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            className={`relative z-10 flex flex-col justify-center px-6 md:px-24 pb-48 transition-all duration-1000 ${viewMode === 'zen' ? 'h-full pt-0' : 'min-h-[70vh] pt-24'}`}
+          >
             <AnimatePresence mode="wait">
               {isQuoteVisible && (
                 <motion.div
@@ -1294,6 +1541,7 @@ export default function App() {
               <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 className="fixed bottom-24 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4"
               >
                 <div className="w-16 h-16 rounded-full border-2 border-brand-text/10 flex items-center justify-center relative">
@@ -1307,8 +1555,9 @@ export default function App() {
                 <p className="text-[10px] uppercase tracking-[0.4em] font-bold opacity-20">Breathe in. Fade out.</p>
               </motion.div>
             )}
-          </main>
+          </motion.main>
         )}
+        </AnimatePresence>
       </div>
 
       {/* Search Overlay */}
@@ -1386,6 +1635,7 @@ export default function App() {
                {[
                  { id: 'feed', icon: Sparkles, label: 'Feed' },
                  { id: 'dashboard', icon: LayoutGrid, label: 'Stats' },
+                 { id: 'health', icon: Stethoscope, label: 'Health' },
                  { id: 'faith', icon: Cross, label: 'Faith' },
                  { id: 'vision', icon: Heart, label: 'Board' },
                  { id: 'breath', icon: Clock, label: 'Breath' }
