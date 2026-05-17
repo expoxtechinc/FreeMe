@@ -6,14 +6,15 @@
 import React, { useState, useEffect, useCallback, ChangeEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Quote, getDailyQuote, getRandomQuote, getCategories, creatorInfo, quotes, Habit, addictionCategories, AddictionType } from './lib/quotes';
-import { Bell, BellOff, RefreshCw, Settings, X, Check, Copy, Share2, Mic, MicOff, Info, ExternalLink, Heart, Search, Shield, Zap, Sparkles, Plus, Trash2, LayoutGrid, Clock, Flame, Wine, Coins, Smartphone, MonitorPause, ChevronRight, Calendar, Activity, Music, Volume2 } from 'lucide-react';
+import { Bell, BellOff, RefreshCw, Settings, X, Check, Copy, Share2, Mic, MicOff, Info, ExternalLink, Heart, Search, Shield, Zap, Sparkles, Plus, Trash2, LayoutGrid, Clock, Flame, Wine, Coins, Smartphone, MonitorPause, ChevronRight, Calendar, Activity, Music, Volume2, Book, Cross, HelpCircle, Send, Bookmark, Star, ChevronLeft, ListChecks } from 'lucide-react';
+import { bibleBooks, foundationsPlan, ReadingPlanDay } from './lib/bibleData';
 
 export default function App() {
   const [currentQuote, setCurrentQuote] = useState<Quote>(getDailyQuote());
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'preferences' | 'about' | 'tracker'>('preferences');
-  const [viewMode, setViewMode] = useState<'feed' | 'zen' | 'dashboard' | 'vision' | 'breath'>('feed');
+  const [viewMode, setViewMode] = useState<'feed' | 'zen' | 'dashboard' | 'vision' | 'breath' | 'faith'>('feed');
   const [showCategoryMenu, setShowCategoryMenu] = useState(false);
   const [isBreathActive, setIsBreathActive] = useState(false);
   const [breathPhase, setBreathPhase] = useState<'Inhale' | 'Hold' | 'Exhale'>('Inhale');
@@ -206,6 +207,111 @@ export default function App() {
     }
   };
 
+  const [reflections, setReflections] = useState<{id: string, text: string, date: string}[]>(() => {
+    return JSON.parse(localStorage.getItem('liberation_reflections') || '[]');
+  });
+  const [newReflection, setNewReflection] = useState("");
+
+  const [counselInput, setCounselInput] = useState("");
+  const [counselResponse, setCounselResponse] = useState("");
+  const [isCounselLoading, setIsCounselLoading] = useState(false);
+
+  const [selectedBibleBook, setSelectedBibleBook] = useState(bibleBooks[0].name);
+  const [selectedBibleChapter, setSelectedBibleChapter] = useState(1);
+  const [bibleContent, setBibleContent] = useState<{ book: string, chapter: number, verses: { verse: number, text: string }[] } | null>(null);
+  const [isBibleLoading, setIsBibleLoading] = useState(false);
+  const [bibleHighlights, setBibleHighlights] = useState<{ id: string, book: string, chapter: number, verse: number, text: string }[]>(() => {
+    return JSON.parse(localStorage.getItem('liberation_bible_highlights') || '[]');
+  });
+  const [readingPlanProgress, setReadingPlanProgress] = useState<number[]>(() => {
+    return JSON.parse(localStorage.getItem('liberation_reading_plan') || '[]');
+  });
+  const [showBibleNav, setShowBibleNav] = useState(false);
+
+  const fetchBibleChapter = async (book: string, chapter: number) => {
+    setIsBibleLoading(true);
+    try {
+      const response = await fetch(`/api/bible/${encodeURIComponent(book)}/${chapter}`);
+      const data = await response.json();
+      setBibleContent({
+        book: data.book_name,
+        chapter: data.chapter,
+        verses: data.verses
+      });
+      setSelectedBibleBook(data.book_name);
+      setSelectedBibleChapter(data.chapter);
+    } catch (err) {
+      console.error("Bible Error:", err);
+    } finally {
+      setIsBibleLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (viewMode === 'faith' && !bibleContent) {
+      fetchBibleChapter(selectedBibleBook, selectedBibleChapter);
+    }
+  }, [viewMode]);
+
+  const toggleHighlight = (verse: { verse: number, text: string }) => {
+    const id = `${selectedBibleBook}-${selectedBibleChapter}-${verse.verse}`;
+    const exists = bibleHighlights.find(h => h.id === id);
+    let next;
+    if (exists) {
+      next = bibleHighlights.filter(h => h.id !== id);
+    } else {
+      next = [...bibleHighlights, { id, book: selectedBibleBook, chapter: selectedBibleChapter, verse: verse.verse, text: verse.text }];
+    }
+    setBibleHighlights(next);
+    localStorage.setItem('liberation_bible_highlights', JSON.stringify(next));
+  };
+
+  const toggleReadingPlanDay = (day: number) => {
+    const next = readingPlanProgress.includes(day) 
+      ? readingPlanProgress.filter(d => d !== day)
+      : [...readingPlanProgress, day];
+    setReadingPlanProgress(next);
+    localStorage.setItem('liberation_reading_plan', JSON.stringify(next));
+  };
+
+  const getBiblicalCounsel = async () => {
+    if (!counselInput.trim()) return;
+    setIsCounselLoading(true);
+    setCounselResponse("");
+    try {
+      const response = await fetch('/api/gemini/biblical-counsel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: counselInput }),
+      });
+      const data = await response.json();
+      setCounselResponse(data.counsel);
+    } catch (err) {
+      setCounselResponse("The Spirit is willing but the connection is weak. Please try again soon. Remember: 'God is our refuge and strength, a very present help in trouble.' (Psalm 46:1)");
+    } finally {
+      setIsCounselLoading(false);
+    }
+  };
+
+  const addReflection = () => {
+    if (!newReflection.trim()) return;
+    const item = {
+      id: Date.now().toString(),
+      text: newReflection,
+      date: new Date().toISOString()
+    };
+    const next = [item, ...reflections];
+    setReflections(next);
+    localStorage.setItem('liberation_reflections', JSON.stringify(next));
+    setNewReflection("");
+  };
+
+  const deleteReflection = (id: string) => {
+    const next = reflections.filter(r => r.id !== id);
+    setReflections(next);
+    localStorage.setItem('liberation_reflections', JSON.stringify(next));
+  };
+
   const isFavorite = favorites.includes(currentQuote.id);
 
   const renderIcon = (category: AddictionType) => {
@@ -353,7 +459,7 @@ export default function App() {
   };
 
   return (
-    <div className="relative h-screen w-screen flex flex-col overflow-hidden selection:bg-brand-text/5">
+    <div className="relative h-[100dvh] w-screen flex flex-col overflow-hidden selection:bg-brand-text/5">
       <audio ref={audioRef} className="hidden" />
       {/* Dynamic Blob Background */}
       <div className="blob-background">
@@ -403,7 +509,7 @@ export default function App() {
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute top-full right-0 mt-2 w-56 max-h-[60vh] overflow-y-auto bg-white/95 backdrop-blur-xl border border-brand-text/5 rounded-2xl shadow-2xl p-2 z-50 hide-scrollbar"
+                      className="absolute top-full right-0 mt-2 w-56 max-h-[60vh] overflow-y-auto bg-white/95 backdrop-blur-xl border border-brand-text/5 rounded-2xl shadow-2xl p-2 z-50 custom-scrollbar"
                     >
                         {getCategories().map((cat) => (
                           <button
@@ -452,8 +558,318 @@ export default function App() {
       </header>
 
       {/* Main Content Areas */}
-      <div className="flex-1 overflow-y-auto hide-scrollbar scroll-smooth pb-32">
-        {viewMode === 'breath' ? (
+      <div className="flex-1 overflow-y-auto custom-scrollbar scroll-smooth pb-32">
+        {viewMode === 'faith' ? (
+          <motion.main 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="relative z-10 px-6 md:px-24 py-8 max-w-7xl mx-auto custom-scrollbar"
+          >
+            {/* Faith Sanctuary Header */}
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-brand-text/5 mb-4 shadow-sm">
+                <Cross className="w-8 h-8 text-brand-text/60" />
+              </div>
+              <h2 className="text-4xl md:text-5xl font-serif italic mb-2">Faith Sanctuary</h2>
+              <p className="text-[9px] uppercase tracking-[0.4em] font-bold opacity-30">Living by the Word of God</p>
+            </div>
+
+            {/* Main Faith Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              
+              {/* Left Column: Bible Reader & Navigation */}
+              <div className="lg:col-span-8 space-y-8">
+                
+                {/* Bible Navigation & Reader Header */}
+                <div className="bg-white/60 backdrop-blur-md rounded-[2.5rem] border border-brand-text/5 shadow-xl overflow-hidden">
+                  <div className="p-6 border-b border-brand-text/5 flex items-center justify-between bg-white/40">
+                    <div className="flex items-center gap-4">
+                      <button 
+                        onClick={() => setShowBibleNav(!showBibleNav)}
+                        className="flex items-center gap-2 px-4 py-2 bg-brand-text text-white rounded-xl text-[10px] uppercase tracking-widest font-bold shadow-md hover:scale-105 transition-all"
+                      >
+                        <ListChecks className="w-3.5 h-3.5" />
+                        {selectedBibleBook} {selectedBibleChapter}
+                      </button>
+                      <div className="flex items-center gap-1">
+                        <button 
+                          onClick={() => fetchBibleChapter(selectedBibleBook, Math.max(1, selectedBibleChapter - 1))}
+                          className="p-2 hover:bg-brand-text/5 rounded-lg text-brand-text/40 hover:text-brand-text transition-all"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => fetchBibleChapter(selectedBibleBook, selectedBibleChapter + 1)}
+                          className="p-2 hover:bg-brand-text/5 rounded-lg text-brand-text/40 hover:text-brand-text transition-all"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                       <span className="text-[9px] uppercase tracking-[0.2em] font-bold opacity-20 hidden md:block">World English Bible</span>
+                    </div>
+                  </div>
+
+                  <AnimatePresence>
+                    {showBibleNav && (
+                      <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden bg-brand-text/5"
+                      >
+                        <div className="p-6 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+                           {bibleBooks.map(book => (
+                             <button
+                               key={book.name}
+                               onClick={() => {
+                                 setSelectedBibleBook(book.name);
+                                 fetchBibleChapter(book.name, 1);
+                                 setShowBibleNav(false);
+                               }}
+                               className={`px-3 py-2 rounded-lg text-[10px] font-bold text-left transition-all ${selectedBibleBook === book.name ? 'bg-brand-text text-white shadow-md' : 'hover:bg-brand-text/10 text-brand-text/60'}`}
+                             >
+                               {book.name}
+                             </button>
+                           ))}
+                        </div>
+                        <div className="p-4 bg-white/20 border-t border-brand-text/5 flex flex-wrap gap-2">
+                           {Array.from({ length: bibleBooks.find(b => b.name === selectedBibleBook)?.chapters || 0 }).map((_, i) => (
+                             <button 
+                              key={i}
+                              onClick={() => {
+                                fetchBibleChapter(selectedBibleBook, i + 1);
+                                setShowBibleNav(false);
+                              }}
+                              className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold transition-all ${selectedBibleChapter === i + 1 ? 'bg-brand-text text-white shadow-md' : 'hover:bg-brand-text/10 text-brand-text/60 bg-white/50'}`}
+                             >
+                               {i + 1}
+                             </button>
+                           ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <div className="p-8 md:p-12 min-h-[500px]">
+                    {isBibleLoading ? (
+                      <div className="h-full flex flex-col items-center justify-center gap-4 py-20 opacity-20">
+                         <RefreshCw className="w-8 h-8 animate-spin" />
+                         <p className="text-[9px] uppercase tracking-widest font-bold">Opening the Heavens...</p>
+                      </div>
+                    ) : bibleContent ? (
+                      <div className="space-y-6">
+                        <div className="mb-12">
+                           <h3 className="text-3xl md:text-4xl font-serif italic mb-2 text-brand-text">{bibleContent.book} {bibleContent.chapter}</h3>
+                           <div className="h-0.5 w-12 bg-brand-text/10 rounded-full"></div>
+                        </div>
+                        <div className="space-y-8">
+                           {bibleContent.verses.map(v => {
+                             const isHighlighted = bibleHighlights.some(h => h.id === `${selectedBibleBook}-${selectedBibleChapter}-${v.verse}`);
+                             return (
+                               <div key={v.verse} className="group relative flex gap-6">
+                                 <div className="flex flex-col items-center gap-2 pt-1.5 min-w-[30px]">
+                                    <span className="text-[10px] font-bold text-brand-text/20 group-hover:text-brand-text/40 transition-colors">{v.verse}</span>
+                                    <button 
+                                      onClick={() => toggleHighlight(v)}
+                                      className={`transition-all ${isHighlighted ? 'text-amber-400 opacity-100' : 'text-brand-text/10 group-hover:opacity-100 hover:text-amber-400 opacity-0'}`}
+                                    >
+                                      <Star className={`w-3.5 h-3.5 ${isHighlighted ? 'fill-current' : ''}`} />
+                                    </button>
+                                 </div>
+                                 <p className={`text-lg md:text-xl font-serif leading-relaxed transition-colors cursor-pointer ${isHighlighted ? 'bg-amber-100/30' : 'text-brand-text/80 group-hover:text-brand-text'}`} onClick={() => toggleHighlight(v)}>
+                                   {v.text}
+                                 </p>
+                               </div>
+                             );
+                           })}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+
+                {/* AI Biblical Counseling (Inside main grid now) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="p-8 bg-brand-text text-white rounded-[2.5rem] shadow-2xl flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-3 mb-6">
+                        <Sparkles className="w-5 h-5 text-emerald-400" />
+                        <h3 className="text-2xl font-serif italic">Biblical Counsel</h3>
+                      </div>
+                      <p className="text-xs font-serif italic opacity-60 leading-relaxed mb-8">
+                        Ask for guidance, comfort, or wisdom. The Word is a lamp unto your feet and a light unto your path.
+                      </p>
+                    </div>
+                    <div className="relative">
+                      <textarea 
+                        value={counselInput}
+                        onChange={(e) => setCounselInput(e.target.value)}
+                        placeholder="How can I find strength in Christ today?"
+                        className="w-full bg-white/10 border border-white/10 rounded-2xl p-4 text-sm font-serif italic text-white placeholder:text-white/20 focus:outline-none focus:bg-white/20 transition-all min-h-[100px] resize-none"
+                      />
+                      <button 
+                        onClick={getBiblicalCounsel}
+                        disabled={isCounselLoading || !counselInput.trim()}
+                        className="absolute bottom-4 right-4 w-10 h-10 bg-white text-brand-text rounded-xl flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 disabled:opacity-50 transition-all"
+                      >
+                        {isCounselLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="p-8 bg-white/60 backdrop-blur-sm rounded-[2.5rem] border border-brand-text/5 shadow-xl flex flex-col">
+                    <div className="flex items-center gap-3 mb-4">
+                      <HelpCircle className="w-4 h-4 text-brand-text/20" />
+                      <h4 className="text-[10px] uppercase tracking-[0.2em] font-bold opacity-30">Spirit-Led Guidance</h4>
+                    </div>
+                    <div className="flex-1 overflow-y-auto custom-scrollbar max-h-[300px]">
+                      {counselResponse ? (
+                        <motion.div 
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="text-sm font-serif italic text-brand-text/70 leading-loose whitespace-pre-wrap"
+                        >
+                          {counselResponse}
+                        </motion.div>
+                      ) : (
+                        <div className="h-full flex flex-col items-center justify-center opacity-20 text-center">
+                          <p className="text-[9px] uppercase tracking-widest font-bold">Waiting for your question...</p>
+                        </div>
+                      )}
+                    </div>
+                    {counselResponse && (
+                      <button 
+                        onClick={() => {
+                          setCounselInput("");
+                          setCounselResponse("");
+                        }}
+                        className="mt-4 text-[8px] uppercase tracking-widest font-bold opacity-40 hover:opacity-100 transition-opacity"
+                      >
+                        Clear Discussion
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Reading Plan & Highlights */}
+              <div className="lg:col-span-4 space-y-8">
+                
+                {/* Scripture of the Day Card */}
+                <div className="p-10 bg-emerald-500 text-white rounded-[3rem] shadow-2xl relative overflow-hidden group">
+                  <div className="relative z-10">
+                    <span className="text-[10px] uppercase tracking-[0.3em] font-bold opacity-40 mb-4 block">Scripture of the Day</span>
+                    <p className="text-xl md:text-2xl font-serif italic mb-6 leading-relaxed">
+                      "{quotes.filter(q => q.category === 'Scripture')[new Date().getDate() % quotes.filter(q => q.category === 'Scripture').length].text}"
+                    </p>
+                    <div className="flex items-center justify-between">
+                       <p className="text-xs font-bold uppercase tracking-widest opacity-40">
+                         {quotes.filter(q => q.category === 'Scripture')[new Date().getDate() % quotes.filter(q => q.category === 'Scripture').length].author}
+                       </p>
+                       <button onClick={handleShare} className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/40 transition-all">
+                         <Share2 className="w-4 h-4 text-white" />
+                       </button>
+                    </div>
+                  </div>
+                  <Sparkles className="absolute top-1/2 right-[-20px] -translate-y-1/2 w-48 h-48 opacity-10 rotate-12 pointer-events-none" />
+                </div>
+
+                {/* Reading Plan */}
+                <div className="p-8 bg-white/60 backdrop-blur-md rounded-[2.5rem] border border-brand-text/5 shadow-xl">
+                  <div className="flex items-center justify-between mb-8">
+                    <div>
+                      <h3 className="text-xl font-serif italic mb-1 text-brand-text">Foundations Plan</h3>
+                      <p className="text-[9px] uppercase tracking-widest font-bold opacity-30">30-Day Spiritual Journey</p>
+                    </div>
+                    <div className="text-right">
+                       <p className="text-2xl font-serif italic text-emerald-500">{Math.round((readingPlanProgress.length / foundationsPlan.length) * 100)}%</p>
+                       <p className="text-[8px] uppercase tracking-widest font-bold opacity-20">Complete</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                     {foundationsPlan.map(day => (
+                       <div key={day.day} className="flex items-center gap-4 group">
+                         <button 
+                          onClick={() => toggleReadingPlanDay(day.day)}
+                          className={`w-6 h-6 rounded-lg border flex items-center justify-center transition-all ${readingPlanProgress.includes(day.day) ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-brand-text/10 group-hover:border-brand-text/30'}`}
+                         >
+                           {readingPlanProgress.includes(day.day) && <Check className="w-3.5 h-3.5" />}
+                         </button>
+                         <div className="flex-1" onClick={() => {
+                            const [book, chapter] = day.reading.split(' ');
+                            fetchBibleChapter(book, parseInt(chapter));
+                         }}>
+                            <p className={`text-[10px] uppercase tracking-widest font-bold ${readingPlanProgress.includes(day.day) ? 'opacity-20 line-through' : 'opacity-60'}`}>Day {day.day}: {day.title}</p>
+                            <p className={`text-xs font-serif italic cursor-pointer hover:text-emerald-500 transition-colors ${readingPlanProgress.includes(day.day) ? 'opacity-20 line-through' : 'opacity-40'}`}>{day.reading}</p>
+                         </div>
+                       </div>
+                     ))}
+                  </div>
+                </div>
+
+                {/* Highlights Table */}
+                <div className="p-8 bg-white/40 backdrop-blur-md rounded-[2.5rem] border border-brand-text/5 shadow-xl">
+                  <div className="flex items-center justify-between mb-8">
+                    <div>
+                      <h3 className="text-xl font-serif italic mb-1 text-brand-text">Precious Gems</h3>
+                      <p className="text-[9px] uppercase tracking-widest font-bold opacity-30">Highlighted Scripture</p>
+                    </div>
+                    <Star className="w-5 h-5 text-amber-400 fill-current" />
+                  </div>
+
+                  <div className="space-y-6 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
+                     {bibleHighlights.length === 0 ? (
+                       <div className="py-12 flex flex-col items-center justify-center gap-4 opacity-10 text-center">
+                          <Bookmark className="w-8 h-8" />
+                          <p className="text-[9px] uppercase tracking-widest font-bold">No highlights yet</p>
+                       </div>
+                     ) : (
+                       bibleHighlights.map(h => (
+                         <div key={h.id} className="group cursor-pointer">
+                            <div className="flex justify-between items-center mb-1">
+                               <p className="text-[9px] uppercase tracking-widest font-bold opacity-30">{h.book} {h.chapter}:{h.verse}</p>
+                               <button onClick={() => toggleHighlight({ verse: h.verse, text: h.text })} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Trash2 className="w-3 h-3 text-red-400" />
+                               </button>
+                            </div>
+                            <p 
+                              onClick={() => fetchBibleChapter(h.book, h.chapter)}
+                              className="text-xs font-serif italic text-brand-text/60 leading-relaxed hover:text-brand-text transition-colors"
+                            >
+                              "{h.text}"
+                            </p>
+                         </div>
+                       ))
+                     )}
+                  </div>
+                </div>
+
+              </div>
+            </div>
+            
+            {/* Spiritual Guidance Footer */}
+            <div className="mt-20 text-center py-20 px-8 border-2 border-dashed border-brand-text/10 rounded-[3.5rem] bg-white/20">
+               <div className="max-w-2xl mx-auto">
+                 <h3 className="text-3xl font-serif italic mb-6">Walking with Christ</h3>
+                 <p className="text-base font-serif italic text-brand-text/60 mb-10 leading-relaxed">
+                   The Gospel is the power of God for salvation to everyone who believes. 
+                   Continue to abide in His Word, for it is there you will find absolute truth and eternal freedom.
+                 </p>
+                 <div className="flex flex-wrap justify-center gap-4">
+                    <button onClick={() => setViewMode('dashboard')} className="px-10 py-4 bg-brand-text text-white rounded-2xl text-[10px] uppercase tracking-widest font-bold shadow-xl hover:scale-105 active:scale-95 transition-all">
+                      Check Liberation Stats
+                    </button>
+                    <button onClick={() => setViewMode('feed')} className="px-10 py-4 bg-white border border-brand-text/10 text-brand-text text-[10px] uppercase tracking-widest font-bold rounded-2xl hover:bg-gray-50 transition-all shadow-sm">
+                      Back to Wisdom Feed
+                    </button>
+                 </div>
+               </div>
+            </div>
+          </motion.main>
+        ) : viewMode === 'breath' ? (
           <motion.main 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -716,10 +1132,67 @@ export default function App() {
                   })}
                 </div>
               )}
+
+              <div className="mt-20">
+                <div className="flex items-center justify-between mb-8">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.4em] font-bold opacity-30 mb-2">Inner Sanctuary</p>
+                    <h2 className="text-3xl font-serif italic">My Reflections</h2>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <div className="p-8 bg-white/40 backdrop-blur-md rounded-[2.5rem] border border-brand-text/5 shadow-xl">
+                     <h4 className="text-[10px] uppercase tracking-[0.2em] font-bold opacity-30 mb-4">Record Insight</h4>
+                     <textarea 
+                      value={newReflection}
+                      onChange={(e) => setNewReflection(e.target.value)}
+                      placeholder="What did you learn today? What gave you strength?"
+                      className="w-full bg-transparent border-none focus:outline-none font-serif text-lg italic text-brand-text/70 min-h-[120px] resize-none"
+                     />
+                     <div className="mt-4 flex justify-end">
+                       <button 
+                        onClick={addReflection}
+                        className="px-6 py-3 bg-brand-text text-white rounded-xl text-[10px] uppercase tracking-widest font-bold shadow-lg hover:scale-105 transition-all"
+                       >
+                        Save Reflection
+                       </button>
+                     </div>
+                  </div>
+
+                  <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                     {reflections.length === 0 ? (
+                       <div className="h-full flex flex-col items-center justify-center opacity-20 py-12">
+                          <Sparkles className="w-8 h-8 mb-4" />
+                          <p className="text-xs uppercase tracking-widest font-bold">Your journal is empty</p>
+                       </div>
+                     ) : (
+                       reflections.map(ref => (
+                         <motion.div 
+                          key={ref.id}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="p-6 bg-white/60 backdrop-blur-sm rounded-2xl border border-brand-text/5 shadow-sm group"
+                         >
+                            <div className="flex justify-between items-start mb-2">
+                              <span className="text-[8px] uppercase tracking-widest font-bold opacity-20">{new Date(ref.date).toLocaleDateString()}</span>
+                              <button onClick={() => deleteReflection(ref.id)} className="opacity-0 group-hover:opacity-40 hover:opacity-100 transition-opacity">
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                            <p className="text-sm font-serif italic text-brand-text/60 leading-relaxed">
+                              {ref.text}
+                            </p>
+                         </motion.div>
+                       ))
+                     )}
+                  </div>
+                </div>
+              </div>
             </div>
           </motion.main>
         ) : (
-          <main className={`relative z-10 flex flex-col justify-center px-8 md:px-24 transition-all duration-1000 ${viewMode === 'zen' ? 'h-full pt-0' : 'h-[60vh] pt-12 pb-32'}`}>
+          <main className={`relative z-10 flex flex-col justify-center px-6 md:px-24 transition-all duration-1000 ${viewMode === 'zen' ? 'h-full pt-0' : 'min-h-[60vh] md:min-h-[70vh] pt-20 pb-32'}`}>
             <AnimatePresence mode="wait">
               {isQuoteVisible && (
                 <motion.div
@@ -728,10 +1201,10 @@ export default function App() {
                   animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
                   exit={{ opacity: 0, y: -30, filter: 'blur(10px)' }}
                   transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-                  className="max-w-4xl relative"
+                  className="max-w-4xl relative w-full mx-auto"
                 >
                   <div className={`absolute -left-12 -top-12 md:-left-20 md:-top-20 flex flex-col items-center gap-4 transition-opacity duration-1000 ${viewMode === 'zen' ? 'opacity-0' : 'opacity-100'}`}>
-                    <span className="text-[160px] md:text-[240px] font-serif leading-none opacity-5 text-brand-accent pointer-events-none select-none">“</span>
+                    <span className="text-[100px] md:text-[240px] font-serif leading-none opacity-5 text-brand-accent pointer-events-none select-none">“</span>
                     <motion.button 
                         whileHover={{ scale: 1.2 }}
                         whileTap={{ scale: 0.9 }}
@@ -742,14 +1215,14 @@ export default function App() {
                     </motion.button>
                   </div>
                   
-                  <h2 className={`font-serif leading-[1.15] mb-12 relative text-brand-text transition-all duration-1000 text-center md:text-left ${viewMode === 'zen' ? 'text-5xl md:text-8xl' : 'text-4xl md:text-7xl'}`}>
+                  <h2 className={`font-serif leading-[1.15] mb-8 relative text-brand-text transition-all duration-1000 text-center md:text-left ${viewMode === 'zen' ? 'text-3xl md:text-8xl' : 'text-2xl sm:text-3xl md:text-6xl lg:text-7xl'}`}>
                     {currentQuote.text}
                   </h2>
 
-                  <div className={`flex items-center justify-between gap-6 max-w-2xl transition-opacity duration-1000 ${viewMode === 'zen' ? 'opacity-30' : 'opacity-100'}`}>
+                  <div className={`flex items-center justify-center md:justify-start gap-6 max-w-2xl transition-opacity duration-1000 ${viewMode === 'zen' ? 'opacity-30' : 'opacity-100'}`}>
                     <div className="flex items-center gap-6">
-                      <div className="w-12 h-px bg-brand-text/20"></div>
-                      <p className="text-xl md:text-2xl font-serif italic opacity-60">
+                      <div className="w-12 h-px bg-brand-text/20 hidden md:block"></div>
+                      <p className="text-lg md:text-2xl font-serif italic opacity-60">
                         {currentQuote.author}
                       </p>
                     </div>
@@ -759,17 +1232,19 @@ export default function App() {
                     <motion.div 
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="mt-16 flex items-center gap-3"
+                      className="mt-16 flex flex-wrap items-center justify-center md:justify-start gap-4"
                     >
-                       <button onClick={() => refreshQuote()} className="px-8 py-4 rounded-2xl bg-brand-text text-white text-[10px] uppercase tracking-widest font-bold shadow-lg flex items-center gap-3">
+                       <button onClick={() => refreshQuote()} className="px-8 py-4 rounded-2xl bg-brand-text text-white text-[10px] uppercase tracking-widest font-bold shadow-lg flex items-center gap-3 active:scale-95 transition-transform">
                           <RefreshCw className="w-4 h-4" /> Next Wisdom
                        </button>
-                       <button onClick={handleShare} className="w-12 h-12 rounded-2xl border border-brand-text/10 flex items-center justify-center text-brand-text/40 hover:text-brand-text hover:border-brand-text/40 transition-all">
-                          <Share2 className="w-4 h-4" />
-                       </button>
-                       <button onClick={copyToClipboard} className="w-12 h-12 rounded-2xl border border-brand-text/10 flex items-center justify-center text-brand-text/40 hover:text-brand-text hover:border-brand-text/40 transition-all">
-                          {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
-                       </button>
+                       <div className="flex items-center gap-2">
+                         <button onClick={handleShare} className="w-12 h-12 rounded-2xl border border-brand-text/10 flex items-center justify-center text-brand-text/40 hover:text-brand-text hover:border-brand-text/40 transition-all bg-white/50">
+                            <Share2 className="w-4 h-4" />
+                         </button>
+                         <button onClick={copyToClipboard} className="w-12 h-12 rounded-2xl border border-brand-text/10 flex items-center justify-center text-brand-text/40 hover:text-brand-text hover:border-brand-text/40 transition-all bg-white/50">
+                            {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                         </button>
+                       </div>
                     </motion.div>
                   )}
                 </motion.div>
@@ -871,6 +1346,7 @@ export default function App() {
              {[
                { id: 'feed', icon: Sparkles, label: 'Feed' },
                { id: 'dashboard', icon: LayoutGrid, label: 'Dashboard' },
+               { id: 'faith', icon: Cross, label: 'Faith' },
                { id: 'vision', icon: Heart, label: 'Board' },
                { id: 'breath', icon: Clock, label: 'Tools' }
              ].map((tab) => (
@@ -1063,7 +1539,7 @@ export default function App() {
                     </section>
                   </div>
                 ) : activeTab === 'tracker' ? (
-                  <div className="space-y-8 max-h-[60vh] overflow-y-auto pr-4 hide-scrollbar">
+                  <div className="space-y-8 max-h-[60vh] overflow-y-auto pr-4 custom-scrollbar">
                      <div>
                         <h3 className="text-2xl font-serif italic mb-2 text-brand-text">Break the Chain</h3>
                         <p className="text-xs text-brand-text/40 font-serif italic">Define your path to complete liberation.</p>

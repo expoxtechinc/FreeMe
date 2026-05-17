@@ -47,6 +47,46 @@ async function startServer() {
     }
   });
 
+  // API Route for Biblical Counseling
+  app.post("/api/gemini/biblical-counsel", async (req, res) => {
+    try {
+      const { question } = req.body;
+
+      if (!question) {
+        return res.status(400).json({ error: "question is required" });
+      }
+
+      const prompt = `A user is seeking biblical guidance/counsel on: "${question}". Provide a compassionate, Christ-centered response that includes 1-2 relevant Bible verses and 2-3 sentences of practical/spiritual application. Help them find faith, strength, and redemption in Christ.`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-1.5-flash",
+        contents: prompt,
+        config: {
+          systemInstruction: "You are a compassionate, wise, and deeply grounded Christian Biblical Counselor and Pastor. Your goal is to lead people to Christ, build their faith using the Holy Bible, and provide hope, teaching, and preaching elements in your responses. Be encouraging and redemption-focused.",
+        },
+      });
+
+      res.json({ counsel: response.text });
+    } catch (error) {
+      console.error("Gemini Biblical Counsel Error:", error);
+      res.status(500).json({ error: "Failed to generate counsel" });
+    }
+  });
+
+  // API Route for fetching Bible Chapters
+  app.get("/api/bible/:book/:chapter", async (req, res) => {
+    try {
+      const { book, chapter } = req.params;
+      const response = await fetch(`https://bible-api.com/${book}+${chapter}?translation=web`);
+      if (!response.ok) throw new Error("Bible API error");
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+       console.error("Bible Fetch Error:", error);
+       res.status(500).json({ error: "Could not fetch scripture" });
+    }
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({

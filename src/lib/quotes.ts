@@ -238,7 +238,23 @@ export const quotes: Quote[] = [
   { id: "Q2", text: "How would your life look 5 years from now if you chose to never look back at this addiction?", author: "Meditation Question", category: "Future" },
   { id: "Q3", text: "What is a small victory you can celebrate today that brings you closer to your true self?", author: "Meditation Question", category: "Action" },
   { id: "Q4", text: "When you feel the urge to relapse, what is the deeper need you are trying to fulfill?", author: "Meditation Question", category: "Recovery" },
-  { id: "Q5", text: "Who are you without your past mistakes?", author: "Meditation Question", category: "Growth" }
+  { id: "Q5", text: "Who are you without your past mistakes?", author: "Meditation Question", category: "Growth" },
+  // Holy Scriptures - The Word of God
+  { id: "B1", text: "So if the Son sets you free, you will be free indeed.", author: "John 8:36", category: "Scripture" },
+  { id: "B2", text: "I can do all things through Christ who strengthens me.", author: "Philippians 4:13", category: "Scripture" },
+  { id: "B3", text: "But they that wait upon the Lord shall renew their strength; they shall mount up with wings as eagles; they shall run, and not be weary; and they shall walk, and not faint.", author: "Isaiah 40:31", category: "Scripture" },
+  { id: "B4", text: "Therefore, if anyone is in Christ, the new creation has come: The old has gone, the new is here!", author: "2 Corinthians 5:17", category: "Scripture" },
+  { id: "B5", text: "For I know the plans I have for you, declares the Lord, plans to prosper you and not to harm you, plans to give you hope and a future.", author: "Jeremiah 29:11", category: "Scripture" },
+  { id: "B6", text: "Fear not, for I am with you; be not dismayed, for I am your God; I will strengthen you, I will help you, I will uphold you with my righteous right hand.", author: "Isaiah 41:10", category: "Scripture" },
+  { id: "B7", text: "Cast all your anxiety on him because he cares for you.", author: "1 Peter 5:7", category: "Scripture" },
+  { id: "B8", text: "No temptation has overtaken you except what is common to mankind. And God is faithful; he will not let you be tempted beyond what you can bear. But when you are tempted, he will also provide a way out so that you can endure it.", author: "1 Corinthians 10:13", category: "Scripture" },
+  { id: "B9", text: "The Lord is my shepherd; I shall not want. He makes me lie down in green pastures. He leads me beside still waters. He restores my soul.", author: "Psalm 23:1-3", category: "Scripture" },
+  { id: "B10", text: "Come to me, all who labor and are heavy laden, and I will give you rest.", author: "Matthew 11:28", category: "Scripture" },
+  { id: "B11", text: "And you will know the truth, and the truth will set you free.", author: "John 8:32", category: "Scripture" },
+  { id: "B12", text: "Submit yourselves therefore to God. Resist the devil, and he will flee from you.", author: "James 4:7", category: "Scripture" },
+  { id: "B13", text: "Peace I leave with you; my peace I give to you. Not as the world gives do I give to you. Let not your hearts be troubled, neither let them be afraid.", author: "John 14:27", category: "Scripture" },
+  { id: "B14", text: "The Lord is near to the brokenhearted and saves the crushed in spirit.", author: "Psalm 34:18", category: "Scripture" },
+  { id: "B15", text: "Be strong and courageous. Do not fear or be in dread of them, for it is the Lord your God who goes with you. He will not leave you or forsake you.", author: "Deuteronomy 31:6", category: "Scripture" }
 ];
 
 export const addictionCategories = [
