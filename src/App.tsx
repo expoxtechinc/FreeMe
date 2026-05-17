@@ -6,13 +6,18 @@
 import React, { useState, useEffect, useCallback, ChangeEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Quote, getDailyQuote, getRandomQuote, getCategories, creatorInfo } from './lib/quotes';
-import { Bell, BellOff, RefreshCw, Settings, X, Check, Copy, Share2, Mic, MicOff, Info, ExternalLink } from 'lucide-react';
+import { Bell, BellOff, RefreshCw, Settings, X, Check, Copy, Share2, Mic, MicOff, Info, ExternalLink, Heart, Search } from 'lucide-react';
 
 export default function App() {
   const [currentQuote, setCurrentQuote] = useState<Quote>(getDailyQuote());
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'preferences' | 'about'>('preferences');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+  const [favorites, setFavorites] = useState<string[]>(() => {
+    return JSON.parse(localStorage.getItem('favorites') || '[]');
+  });
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
     return localStorage.getItem('notificationsEnabled') === 'true';
   });
@@ -29,6 +34,16 @@ export default function App() {
     setCurrentQuote(daily);
   }, []);
 
+  const toggleFavorite = (quoteId: string) => {
+    const nextFavorites = favorites.includes(quoteId)
+      ? favorites.filter(id => id !== quoteId)
+      : [...favorites, quoteId];
+    setFavorites(nextFavorites);
+    localStorage.setItem('favorites', JSON.stringify(nextFavorites));
+  };
+
+  const isFavorite = favorites.includes(currentQuote.id);
+
   const refreshQuote = useCallback((category?: string) => {
     setIsQuoteVisible(false);
     setTimeout(() => {
@@ -40,6 +55,25 @@ export default function App() {
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
     refreshQuote(category);
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const results = quotes.filter(q => 
+      q.text.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      q.author.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    if (results.length > 0) {
+      const randomResult = results[Math.floor(Math.random() * results.length)];
+      setIsQuoteVisible(false);
+      setTimeout(() => {
+        setCurrentQuote(randomResult);
+        setIsQuoteVisible(true);
+        setShowSearch(false);
+      }, 500);
+    } else {
+      alert("No quotes found matching your focus.");
+    }
   };
 
   const copyToClipboard = async () => {
@@ -172,6 +206,13 @@ export default function App() {
             </div>
           </div>
           <button 
+            onClick={() => setShowSearch(true)}
+            className="w-12 h-12 btn-outline flex items-center justify-center border border-brand-text/10"
+            title="Search for Wisdom"
+          >
+            <Search className="w-5 h-5" />
+          </button>
+          <button 
             onClick={() => {
               setActiveTab('preferences');
               setIsSettingsOpen(true);
@@ -215,7 +256,17 @@ export default function App() {
               transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
               className="max-w-4xl relative"
             >
-              <span className="text-[160px] md:text-[240px] font-serif leading-none absolute -left-12 md:-left-20 -top-24 md:-top-32 opacity-5 text-brand-accent pointer-events-none select-none">“</span>
+              <div className="absolute -left-12 -top-12 md:-left-20 md:-top-20 flex flex-col items-center gap-4">
+                 <span className="text-[160px] md:text-[240px] font-serif leading-none opacity-5 text-brand-accent pointer-events-none select-none">“</span>
+                 <motion.button 
+                    whileHover={{ scale: 1.2 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => toggleFavorite(currentQuote.id)}
+                    className="relative z-20 group"
+                 >
+                    <Heart className={`w-8 h-8 transition-colors duration-500 ${isFavorite ? "fill-red-500 text-red-500" : "text-brand-text/10 group-hover:text-brand-text/30"}`} />
+                 </motion.button>
+              </div>
               
               <h2 className="text-4xl md:text-6xl lg:text-7xl font-serif leading-[1.15] mb-12 relative text-brand-text">
                 {currentQuote.text.split(' ').map((word, i) => (
@@ -240,6 +291,50 @@ export default function App() {
           )}
         </AnimatePresence>
       </main>
+
+      {/* Search Overlay */}
+      <AnimatePresence>
+        {showSearch && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-6 bg-brand-bg/95 backdrop-blur-xl"
+          >
+            <button onClick={() => setShowSearch(false)} className="absolute top-12 right-12 btn-outline w-12 h-12 flex items-center justify-center">
+              <X className="w-5 h-5" />
+            </button>
+            <form onSubmit={handleSearch} className="w-full max-w-3xl flex flex-col items-center gap-8">
+              <h2 className="text-4xl font-serif italic mb-4">What wisdom do you seek?</h2>
+              <div className="w-full relative">
+                <input 
+                  autoFocus
+                  type="text" 
+                  placeholder="Focus on a keyword (e.g. Action, Love, Future)..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-transparent border-b-2 border-brand-text/10 p-4 text-4xl font-serif text-center focus:outline-none focus:border-brand-text outline-none transition-all"
+                />
+                <button type="submit" className="absolute right-4 top-1/2 -translate-y-1/2 opacity-20 hover:opacity-100 transition-opacity">
+                  <Search className="w-8 h-8" />
+                </button>
+              </div>
+              <div className="flex flex-wrap justify-center gap-2 mt-8">
+                {["Inspiration", "Action", "Mindset", "Success", "Love"].map(tag => (
+                  <button 
+                    key={tag}
+                    type="button"
+                    onClick={() => setSearchQuery(tag)}
+                    className="px-4 py-2 rounded-full border border-brand-text/5 text-[10px] uppercase tracking-widest hover:bg-brand-text hover:text-white transition-all"
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Bottom Controls */}
       <footer className="relative z-10 p-8 md:p-12 flex flex-col md:flex-row items-end md:items-center justify-between gap-6">

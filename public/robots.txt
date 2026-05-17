@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://freeme-liberia.vercel.app/sitemap.xml
