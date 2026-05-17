@@ -218,7 +218,27 @@ export const quotes: Quote[] = [
   { id: "197", text: "Love takes off masks that we fear we cannot live without and know we cannot live within.", author: "James Baldwin", category: "Love" },
   { id: "198", text: "The meeting of two people is the most powerful thing on earth.", author: "Akin S. Sokpah", category: "Relationships" },
   { id: "199", text: "In the end, only three things matter: how much you loved, how gently you lived, and how gracefully you let go of things not meant for you.", author: "Buddhist Proverb", category: "Living" },
-  { id: "200", text: "A relationship without trust is like a car without gas. You can stay in it all you want, but it won't go anywhere.", author: "Unknown", category: "Relationships" }
+  { id: "201", text: "Persistence is the twin sister of excellence. One is a matter of quality; the other, a matter of time.", author: "Marabel Morgan", category: "Persistence" },
+  { id: "202", text: "The greatest impact you can have is on your own character.", author: "Unknown", category: "Impact" },
+  { id: "203", text: "Motivation is what gets you started. Habit is what keeps you going.", author: "Jim Ryun", category: "Habits" },
+  { id: "204", text: "Happiness is when what you think, what you say, and what you do are in harmony.", author: "Mahatma Gandhi", category: "Happiness" },
+  { id: "205", text: "Action is the foundational key to all success.", author: "Pablo Picasso", category: "Action" },
+  { id: "206", text: "The future depends on what you do today.", author: "Mahatma Gandhi", category: "Future" },
+  { id: "207", text: "The soul which has no fixed purpose in life is lost.", author: "Michel de Montaigne", category: "Purpose" },
+  { id: "208", text: "Excellence is not a singular act, but a habit. You are what you repeatedly do.", author: "Shaquille O'Neal", category: "Excellence" },
+  { id: "209", text: "Recovery is something that you have to work on every single day and it's something that doesn't get a day off.", author: "Demi Lovato", category: "Recovery" },
+  { id: "210", text: "Sobriety gives back everything alcohol promised.", author: "Unknown", category: "Sobriety" },
+  { id: "211", text: "Liberation is not just breaking chains, but living in a way that respects and enhances the freedom of others.", author: "Nelson Mandela", category: "Liberation" },
+  { id: "212", text: "He who cannot obey himself will be commanded. That is the nature of living creatures.", author: "Friedrich Nietzsche", category: "Self-Control" },
+  { id: "213", text: "To live is to change, and to be perfect is to have changed often.", author: "John Henry Newman", category: "Living" },
+  { id: "214", text: "The meeting of two personalities is like the contact of two chemical substances: if there is any reaction, both are transformed.", author: "Carl Jung", category: "Relationships" },
+  { id: "215", text: "Love isn't something you find. Love is something that finds you.", author: "Loretta Young", category: "Love" },
+  { id: "216", text: "Success is not how high you have climbed, but how you make a positive difference to the world.", author: "Roy T. Bennett", category: "Success" },
+  { id: "Q1", text: "If you were to be completely honest with yourself right now, what is the one thing holding you back from your ultimate freedom?", author: "Meditation Question", category: "Liberation" },
+  { id: "Q2", text: "How would your life look 5 years from now if you chose to never look back at this addiction?", author: "Meditation Question", category: "Future" },
+  { id: "Q3", text: "What is a small victory you can celebrate today that brings you closer to your true self?", author: "Meditation Question", category: "Action" },
+  { id: "Q4", text: "When you feel the urge to relapse, what is the deeper need you are trying to fulfill?", author: "Meditation Question", category: "Recovery" },
+  { id: "Q5", text: "Who are you without your past mistakes?", author: "Meditation Question", category: "Growth" }
 ];
 
 export const addictionCategories = [

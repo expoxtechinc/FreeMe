@@ -6,14 +6,17 @@
 import React, { useState, useEffect, useCallback, ChangeEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Quote, getDailyQuote, getRandomQuote, getCategories, creatorInfo, quotes, Habit, addictionCategories, AddictionType } from './lib/quotes';
-import { Bell, BellOff, RefreshCw, Settings, X, Check, Copy, Share2, Mic, MicOff, Info, ExternalLink, Heart, Search, Shield, Zap, Sparkles, Plus, Trash2, LayoutGrid, Clock, Flame, Wine, Coins, Smartphone, MonitorPause, ChevronRight, Calendar, Activity } from 'lucide-react';
+import { Bell, BellOff, RefreshCw, Settings, X, Check, Copy, Share2, Mic, MicOff, Info, ExternalLink, Heart, Search, Shield, Zap, Sparkles, Plus, Trash2, LayoutGrid, Clock, Flame, Wine, Coins, Smartphone, MonitorPause, ChevronRight, Calendar, Activity, Music, Volume2 } from 'lucide-react';
 
 export default function App() {
   const [currentQuote, setCurrentQuote] = useState<Quote>(getDailyQuote());
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'preferences' | 'about' | 'tracker'>('preferences');
-  const [viewMode, setViewMode] = useState<'canvas' | 'zen' | 'tracker'>('canvas');
+  const [viewMode, setViewMode] = useState<'canvas' | 'zen' | 'tracker' | 'vision' | 'breath'>('canvas');
+  const [showCategoryMenu, setShowCategoryMenu] = useState(false);
+  const [isBreathActive, setIsBreathActive] = useState(false);
+  const [breathPhase, setBreathPhase] = useState<'Inhale' | 'Hold' | 'Exhale'>('Inhale');
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   
@@ -44,9 +47,77 @@ export default function App() {
   const [isSOSLoading, setIsSOSLoading] = useState(false);
   const [sosMessage, setSosMessage] = useState<string | null>(null);
 
+  const [ambientSound, setAmbientSound] = useState<'none' | 'lofi' | 'rain' | 'nature' | 'space'>('none');
+  const [autoRefreshQuotes, setAutoRefreshQuotes] = useState(false);
+  const audioRef = React.useRef<HTMLAudioElement | null>(null);
+
   const [isQuoteVisible, setIsQuoteVisible] = useState(true);
   const [copied, setCopied] = useState(false);
   const [isListening, setIsListening] = useState(false);
+
+  // Auto-refresh logic for Zen Focus
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (autoRefreshQuotes && viewMode === 'zen') {
+      interval = setInterval(() => {
+        refreshQuote();
+      }, 30000); // 30 seconds
+    }
+    return () => clearInterval(interval);
+  }, [autoRefreshQuotes, viewMode]);
+
+  // Ambient sound logic
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.loop = true;
+      audioRef.current.volume = 0.3;
+      
+      const soundUrls = {
+        lofi: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", // Placeholder for lofi
+        rain: "https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3", // Rain loops usually need long files
+        nature: "https://assets.mixkit.co/active_storage/sfx/2361/2361-preview.mp3",
+        space: "https://assets.mixkit.co/active_storage/sfx/2357/2357-preview.mp3",
+        none: ""
+      };
+
+      if (ambientSound !== 'none') {
+        // Since I don't have perfect looping mp3 urls, I'll use these as examples.
+        // In a real app, we'd use better static assets.
+        // I will use some known reliable ambient urls if possible.
+        const actualUrls = {
+          lofi: "https://stream.zeno.fm/f97800p6rz8uv", // Lofi Radio stream example
+          rain: "https://www.soundjay.com/nature/rain-01.mp3",
+          nature: "https://www.soundjay.com/nature/forest-01.mp3",
+          space: "https://www.soundjay.com/misc/sounds/deep-space-01.mp3",
+          none: ""
+        };
+        
+        audioRef.current.src = actualUrls[ambientSound];
+        audioRef.current.play().catch(e => console.error("Audio play blocked", e));
+      }
+    }
+  }, [ambientSound]);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isBreathActive) {
+      const cycle = () => {
+        setBreathPhase('Inhale');
+        timer = setTimeout(() => {
+          setBreathPhase('Hold');
+          timer = setTimeout(() => {
+            setBreathPhase('Exhale');
+            timer = setTimeout(() => {
+              cycle();
+            }, 4000);
+          }, 4000);
+        }, 4000);
+      };
+      cycle();
+    }
+    return () => clearTimeout(timer);
+  }, [isBreathActive]);
 
   const toggleFavorite = (quoteId: string) => {
     const nextFavorites = favorites.includes(quoteId)
@@ -283,6 +354,7 @@ export default function App() {
 
   return (
     <div className="relative h-screen w-screen flex flex-col overflow-hidden selection:bg-brand-text/5">
+      <audio ref={audioRef} className="hidden" />
       {/* Dynamic Blob Background */}
       <div className="blob-background">
         <motion.div 
@@ -315,6 +387,63 @@ export default function App() {
 
         <div className="flex items-center gap-6">
           {viewMode !== 'zen' && (
+            <div className="relative">
+              <button 
+                onClick={() => setShowCategoryMenu(!showCategoryMenu)}
+                className="px-6 py-3 rounded-2xl bg-brand-text text-white text-[10px] uppercase tracking-[0.2em] font-bold shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+              >
+                <LayoutGrid className="w-3 h-3" />
+                Wisdom Channels
+              </button>
+              
+              <AnimatePresence>
+                {showCategoryMenu && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40 bg-white/5 backdrop-blur-[2px]" 
+                      onClick={() => setShowCategoryMenu(false)}
+                    />
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                      className="absolute top-full left-0 mt-3 w-64 max-h-[70vh] overflow-y-auto bg-white/95 backdrop-blur-xl border border-brand-text/5 rounded-[2rem] shadow-2xl p-4 z-50 hide-scrollbar"
+                    >
+                      <div className="grid grid-cols-1 gap-1">
+                        <button
+                          onClick={() => {
+                            refreshQuote();
+                            setShowCategoryMenu(false);
+                          }}
+                          className="w-full text-left px-5 py-3 rounded-xl text-[10px] uppercase tracking-widest font-bold transition-all bg-emerald-500 text-white shadow-lg mb-2 flex items-center justify-between"
+                        >
+                          Surprise Me <RefreshCw className="w-3 h-3" />
+                        </button>
+                        {getCategories().map((cat) => (
+                          <button
+                            key={cat}
+                            onClick={() => {
+                              handleCategoryChange(cat);
+                              setShowCategoryMenu(false);
+                            }}
+                            className={`w-full text-left px-5 py-3 rounded-xl text-[10px] uppercase tracking-widest font-bold transition-all ${
+                              selectedCategory === cat 
+                              ? "bg-brand-text text-white shadow-md" 
+                              : "hover:bg-brand-text/5 text-brand-text/60"
+                            }`}
+                          >
+                            {cat}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {viewMode !== 'zen' && (
             <div className="hidden md:flex flex-col items-end">
               <span className="text-[10px] uppercase tracking-[0.2em] font-bold opacity-40 mb-1">Liberation Status</span>
               <div className="flex items-center gap-2">
@@ -328,7 +457,7 @@ export default function App() {
           
           <button 
             onClick={() => setViewMode(prev => prev === 'zen' ? 'canvas' : 'zen')}
-            className={`w-12 h-12 btn-outline flex items-center justify-center border transition-all duration-500 ${viewMode === 'zen' ? 'bg-brand-text text-white border-brand-text shadow-xl' : 'border-brand-text/10'}`}
+            className={`w-12 h-12 btn-outline flex items-center justify-center border transition-all duration-500 rounded-2xl ${viewMode === 'zen' ? 'bg-brand-text text-white border-brand-text shadow-xl' : 'border-brand-text/10'}`}
             title="Zen Focus Mode"
           >
             <Sparkles className="w-5 h-5" />
@@ -337,11 +466,25 @@ export default function App() {
           {viewMode !== 'zen' && (
             <>
               <button 
+                onClick={() => setViewMode(prev => prev === 'breath' ? 'canvas' : 'breath')}
+                className={`w-12 h-12 btn-outline flex items-center justify-center border transition-all duration-500 rounded-2xl ${viewMode === 'breath' ? 'bg-emerald-500 text-white border-emerald-500 shadow-xl' : 'border-brand-text/10'}`}
+                title="Sacred Breath Tool"
+              >
+                <Clock className="w-5 h-5" />
+              </button>
+              <button 
+                onClick={() => setViewMode(prev => prev === 'vision' ? 'canvas' : 'vision')}
+                className={`w-12 h-12 btn-outline flex items-center justify-center border transition-all duration-500 rounded-2xl ${viewMode === 'vision' ? 'bg-brand-accent text-white border-brand-accent shadow-xl' : 'border-brand-text/10'}`}
+                title="Vision Board"
+              >
+                <Heart className="w-5 h-5" />
+              </button>
+              <button 
                 onClick={() => setViewMode(prev => prev === 'tracker' ? 'canvas' : 'tracker')}
-                className={`w-12 h-12 btn-outline flex items-center justify-center border transition-all duration-500 ${viewMode === 'tracker' ? 'bg-brand-text text-white border-brand-text shadow-xl' : 'border-brand-text/10'}`}
+                className={`w-12 h-12 btn-outline flex items-center justify-center border transition-all duration-500 rounded-2xl ${viewMode === 'tracker' ? 'bg-brand-text text-white border-brand-text shadow-xl' : 'border-brand-text/10'}`}
                 title="Tracker Dashboard"
               >
-                <LayoutGrid className="w-5 h-5" />
+                <Shield className="w-5 h-5" />
               </button>
               <button 
                 onClick={() => setShowSearch(true)}
@@ -366,36 +509,100 @@ export default function App() {
       </header>
 
       {/* Category Chips Container */}
-      <AnimatePresence>
-        {viewMode === 'canvas' && (
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="relative z-10 px-8 md:px-12 mb-4"
-          >
-            <div className="flex items-center gap-3 overflow-x-auto pb-4 hide-scrollbar">
-              {getCategories().map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => handleCategoryChange(cat)}
-                  className={`whitespace-nowrap px-6 py-2 rounded-full text-[10px] uppercase tracking-[0.2em] font-bold transition-all duration-300 border ${
-                    selectedCategory === cat 
-                    ? "bg-brand-text text-white border-brand-text shadow-lg" 
-                    : "bg-white/50 text-brand-text/40 border-brand-text/5 hover:border-brand-text/20 hover:text-brand-text"
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Main Content Areas */}
       <div className="flex-1 overflow-y-auto hide-scrollbar scroll-smooth">
-        {viewMode === 'tracker' ? (
+        {viewMode === 'breath' ? (
+          <motion.main 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="relative z-10 flex flex-col items-center justify-center p-8 h-full"
+          >
+             <div className="text-center mb-12">
+                <h2 className="text-5xl font-serif italic mb-4">Sacred Breath</h2>
+                <p className="text-[10px] uppercase tracking-[0.4em] font-bold opacity-30">Grounding your spirit in the present</p>
+             </div>
+
+             <div className="relative flex items-center justify-center">
+                <motion.div 
+                  animate={{ 
+                    scale: isBreathActive ? (breathPhase === 'Inhale' ? 1.5 : breathPhase === 'Hold' ? 1.5 : 1) : 1,
+                    opacity: isBreathActive ? (breathPhase === 'Inhale' ? 0.8 : breathPhase === 'Hold' ? 1 : 0.6) : 0.6
+                  }}
+                  transition={{ duration: breathPhase === 'Hold' ? 4 : 4, ease: "easeInOut" }}
+                  className="w-48 h-48 md:w-64 md:h-64 rounded-full bg-emerald-500/20 border-4 border-emerald-500 flex items-center justify-center"
+                >
+                   <div className="text-2xl font-serif italic text-emerald-600">
+                      {isBreathActive ? breathPhase : "Ready?"}
+                   </div>
+                </motion.div>
+                
+                {/* Visual ripple */}
+                {isBreathActive && (
+                  <motion.div 
+                    initial={{ scale: 1, opacity: 0.5 }}
+                    animate={{ scale: 2.5, opacity: 0 }}
+                    transition={{ duration: 4, repeat: Infinity }}
+                    className="absolute inset-0 rounded-full border border-emerald-500/30"
+                  />
+                )}
+             </div>
+
+             <button 
+              onClick={() => setIsBreathActive(!isBreathActive)}
+              className="mt-16 px-12 py-5 bg-emerald-500 text-white rounded-2xl font-bold uppercase tracking-widest text-xs shadow-2xl hover:scale-105 active:scale-95 transition-all"
+             >
+              {isBreathActive ? "Stop Sanctuary" : "Begin Breathing"}
+             </button>
+             
+             <p className="mt-8 text-xs font-serif italic opacity-40">4s Inhale • 4s Hold • 4s Exhale</p>
+          </motion.main>
+        ) : viewMode === 'vision' ? (
+          <motion.main 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="relative z-10 px-8 md:px-24 py-12"
+          >
+            <div className="max-w-6xl mx-auto">
+              <div className="flex items-center justify-between mb-12">
+                <div>
+                  <h2 className="text-5xl font-serif italic mb-2">My Vision Board</h2>
+                  <p className="text-[10px] uppercase tracking-[0.4em] font-bold opacity-30">Your collected keys to liberation</p>
+                </div>
+              </div>
+
+              {favorites.length === 0 ? (
+                <div className="py-24 border-2 border-dashed border-brand-text/10 rounded-[3rem] text-center">
+                  <Heart className="w-12 h-12 opacity-10 mx-auto mb-6" />
+                  <p className="text-xl font-serif italic opacity-30">No wisdom keys saved yet.</p>
+                </div>
+              ) : (
+                <div className="columns-1 md:columns-2 lg:columns-3 gap-8">
+                  {quotes.filter(q => favorites.includes(q.id)).map(quote => (
+                    <motion.div 
+                      key={quote.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="break-inside-avoid mb-8 p-8 bg-white/40 backdrop-blur-md rounded-[2.5rem] border border-brand-text/5 shadow-xl hover:shadow-2xl transition-all group"
+                    >
+                       <p className="text-xl font-serif italic text-brand-text leading-relaxed mb-6">
+                        “{quote.text}”
+                       </p>
+                       <div className="flex items-center justify-between">
+                          <span className="text-[10px] uppercase tracking-widest font-bold opacity-40">{quote.author}</span>
+                          <button 
+                            onClick={() => toggleFavorite(quote.id)}
+                            className="text-red-500 hover:scale-110 transition-transform"
+                          >
+                             <Heart className="w-4 h-4 fill-current" />
+                          </button>
+                       </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </motion.main>
+        ) : viewMode === 'tracker' ? (
           <motion.main 
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -766,6 +973,45 @@ export default function App() {
                 {activeTab === 'preferences' ? (
                   <div className="space-y-12">
                     <section>
+                      <div className="flex items-center justify-between mb-8">
+                        <div>
+                          <h3 className="text-[10px] font-sans font-bold tracking-[0.2em] uppercase text-brand-text opacity-60 mb-2">Ambient Sanctuary</h3>
+                          <p className="text-xs text-brand-text/40 leading-relaxed max-w-[200px] font-serif italic">
+                            Select a soundscape for deep concentration.
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                           {['none', 'lofi', 'rain', 'nature', 'space'].map(sound => (
+                             <button 
+                              key={sound}
+                              onClick={() => setAmbientSound(sound as any)}
+                              className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${ambientSound === sound ? 'bg-brand-text text-white border-brand-text shadow-lg' : 'bg-white border-brand-text/5 text-brand-text/30 hover:border-brand-text/20'}`}
+                              title={sound}
+                             >
+                               {sound === 'none' ? <X className="w-3 h-3" /> : sound === 'lofi' ? <Music className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
+                             </button>
+                           ))}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between mb-12">
+                        <div>
+                          <h3 className="text-[10px] font-sans font-bold tracking-[0.2em] uppercase text-brand-text opacity-60 mb-2">Auto-Refueling</h3>
+                          <p className="text-xs text-brand-text/40 leading-relaxed max-w-[200px] font-serif italic">
+                            Wisdom keys rotate automatically every 30s in Zen Mode.
+                          </p>
+                        </div>
+                        <button 
+                          onClick={() => setAutoRefreshQuotes(!autoRefreshQuotes)}
+                          className={`w-14 h-8 rounded-full p-1 transition-colors duration-500 relative ${autoRefreshQuotes ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-brand-text/10'}`}
+                        >
+                           <motion.div 
+                            animate={{ x: autoRefreshQuotes ? 24 : 0 }}
+                            className="w-6 h-6 bg-white rounded-full shadow-md"
+                           />
+                        </button>
+                      </div>
+
                       <div className="flex items-center justify-between mb-6">
                         <div>
                           <h3 className="text-[10px] font-sans font-bold tracking-[0.2em] uppercase text-brand-text opacity-60 mb-2">Sanctuary Alerts</h3>
