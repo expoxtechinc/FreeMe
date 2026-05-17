@@ -1,6 +1,6 @@
 {
   "name": "FreeMe",
-  "description": "A motivational quote app with daily inspiration and customizable reminders, built for offline focus.",
+  "description": "An advanced liberation sanctuary helping users overcome addictions (drugs, alcohol, habits) through the Freedom Tracker, Zen Mode, and 150+ curated wisdom keys. Created by Akin S. Sokpah.",
   "requestFramePermissions": ["notifications"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

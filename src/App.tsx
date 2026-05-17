@@ -5,16 +5,26 @@
 
 import React, { useState, useEffect, useCallback, ChangeEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Quote, getDailyQuote, getRandomQuote, getCategories, creatorInfo } from './lib/quotes';
-import { Bell, BellOff, RefreshCw, Settings, X, Check, Copy, Share2, Mic, MicOff, Info, ExternalLink, Heart, Search } from 'lucide-react';
+import { Quote, getDailyQuote, getRandomQuote, getCategories, creatorInfo, quotes, Habit, addictionCategories, AddictionType } from './lib/quotes';
+import { Bell, BellOff, RefreshCw, Settings, X, Check, Copy, Share2, Mic, MicOff, Info, ExternalLink, Heart, Search, Shield, Zap, Sparkles, Plus, Trash2, LayoutGrid, Clock, Flame, Wine, Coins, Smartphone, MonitorPause, ChevronRight, Calendar, Activity } from 'lucide-react';
 
 export default function App() {
   const [currentQuote, setCurrentQuote] = useState<Quote>(getDailyQuote());
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'preferences' | 'about'>('preferences');
+  const [activeTab, setActiveTab] = useState<'preferences' | 'about' | 'tracker'>('preferences');
+  const [viewMode, setViewMode] = useState<'canvas' | 'zen' | 'tracker'>('canvas');
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  
+  const [habits, setHabits] = useState<Habit[]>(() => {
+    return JSON.parse(localStorage.getItem('liberation_habits') || '[]');
+  });
+
+  const [newHabitCategory, setNewHabitCategory] = useState<AddictionType>('custom');
+  const [newHabitGoal, setNewHabitGoal] = useState("");
+  const [isGeneratingNarrative, setIsGeneratingNarrative] = useState(false);
+
   const [favorites, setFavorites] = useState<string[]>(() => {
     return JSON.parse(localStorage.getItem('favorites') || '[]');
   });
@@ -24,25 +34,98 @@ export default function App() {
   const [reminderTime, setReminderTime] = useState(() => {
     return localStorage.getItem('reminderTime') || '09:00';
   });
+  const [notifFrequency, setNotifFrequency] = useState(() => {
+    return localStorage.getItem('notifFrequency') || 'daily';
+  });
+  const [customNotifBody, setCustomNotifBody] = useState(() => {
+    return localStorage.getItem('customNotifBody') || 'Your daily spark of liberation awaits.';
+  });
+
   const [isQuoteVisible, setIsQuoteVisible] = useState(true);
   const [copied, setCopied] = useState(false);
   const [isListening, setIsListening] = useState(false);
 
-  // Load quote of the day or a random one
-  useEffect(() => {
-    const daily = getDailyQuote();
-    setCurrentQuote(daily);
-  }, []);
+  const addHabit = async (name: string, type: 'sobriety' | 'habit') => {
+    setIsGeneratingNarrative(true);
+    let narrative = "";
+    try {
+      const response = await fetch('/api/gemini/generate-narrative', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ habitName: name, category: newHabitCategory, goal: newHabitGoal })
+      });
+      const data = await response.json();
+      narrative = data.narrative || "";
+    } catch (err) {
+      console.error("AI Error:", err);
+    } finally {
+      setIsGeneratingNarrative(false);
+    }
 
-  const toggleFavorite = (quoteId: string) => {
-    const nextFavorites = favorites.includes(quoteId)
-      ? favorites.filter(id => id !== quoteId)
-      : [...favorites, quoteId];
-    setFavorites(nextFavorites);
-    localStorage.setItem('favorites', JSON.stringify(nextFavorites));
+    const newHabit: Habit = {
+      id: Date.now().toString(),
+      name,
+      startDate: new Date().toISOString(),
+      type,
+      category: newHabitCategory,
+      goal: newHabitGoal,
+      narrative: narrative
+    };
+    const nextHabits = [...habits, newHabit];
+    setHabits(nextHabits);
+    localStorage.setItem('liberation_habits', JSON.stringify(nextHabits));
+    setIsSettingsOpen(false);
+    setViewMode('tracker');
+    setNewHabitGoal("");
+  };
+
+  const deleteHabit = (id: string) => {
+    const nextHabits = habits.filter(h => h.id !== id);
+    setHabits(nextHabits);
+    localStorage.setItem('liberation_habits', JSON.stringify(nextHabits));
+  };
+
+  const calculateDays = (startDate: string) => {
+    const start = new Date(startDate).getTime();
+    const now = new Date().getTime();
+    const diff = now - start;
+    return Math.floor(diff / (1000 * 60 * 60 * 24));
+  };
+
+  const resetHabit = (id: string) => {
+    if (confirm("Resetting will start your streak over. Are you sure?")) {
+      const nextHabits = habits.map(h => 
+        h.id === id ? { ...h, startDate: new Date().toISOString() } : h
+      );
+      setHabits(nextHabits);
+      localStorage.setItem('liberation_habits', JSON.stringify(nextHabits));
+    }
   };
 
   const isFavorite = favorites.includes(currentQuote.id);
+
+  const renderIcon = (category: AddictionType) => {
+    switch (category) {
+      case 'drugs': return <Shield className="w-6 h-6" />;
+      case 'alcohol': return <Wine className="w-6 h-6" />;
+      case 'gambling': return <Coins className="w-6 h-6" />;
+      case 'social-media': return <Smartphone className="w-6 h-6" />;
+      case 'pornography': return <MonitorPause className="w-6 h-6" />;
+      default: return <Zap className="w-6 h-6" />;
+    }
+  };
+
+  const getCategoryColor = (category: AddictionType) => {
+    const found = addictionCategories.find(c => c.id === category);
+    switch (found?.color) {
+      case 'emerald': return 'text-emerald-500 bg-emerald-50 border-emerald-100';
+      case 'blue': return 'text-blue-500 bg-blue-50 border-blue-100';
+      case 'orange': return 'text-orange-500 bg-orange-50 border-orange-100';
+      case 'purple': return 'text-purple-500 bg-purple-50 border-purple-100';
+      case 'rose': return 'text-rose-500 bg-rose-50 border-rose-100';
+      default: return 'text-brand-text bg-gray-50 border-gray-100';
+    }
+  };
 
   const refreshQuote = useCallback((category?: string) => {
     setIsQuoteVisible(false);
@@ -198,99 +281,269 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-6">
-          <div className="hidden md:flex flex-col items-end">
-            <span className="text-[10px] uppercase tracking-[0.2em] font-bold opacity-40 mb-1">Offline Resilience</span>
-            <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-              <span className="text-xs font-medium opacity-80 uppercase tracking-widest text-[9px]">Local Vault Ready</span>
+          {viewMode !== 'zen' && (
+            <div className="hidden md:flex flex-col items-end">
+              <span className="text-[10px] uppercase tracking-[0.2em] font-bold opacity-40 mb-1">Liberation Status</span>
+              <div className="flex items-center gap-2">
+                <Shield className="w-3 h-3 text-emerald-500" />
+                <span className="text-xs font-medium opacity-80 uppercase tracking-widest text-[9px]">
+                  {habits.length > 0 ? `${habits.length} Chains Broken` : "Vault Synchronized"}
+                </span>
+              </div>
             </div>
-          </div>
+          )}
+          
           <button 
-            onClick={() => setShowSearch(true)}
-            className="w-12 h-12 btn-outline flex items-center justify-center border border-brand-text/10"
-            title="Search for Wisdom"
+            onClick={() => setViewMode(prev => prev === 'zen' ? 'canvas' : 'zen')}
+            className={`w-12 h-12 btn-outline flex items-center justify-center border transition-all duration-500 ${viewMode === 'zen' ? 'bg-brand-text text-white border-brand-text shadow-xl' : 'border-brand-text/10'}`}
+            title="Zen Focus Mode"
           >
-            <Search className="w-5 h-5" />
+            <Sparkles className="w-5 h-5" />
           </button>
-          <button 
-            onClick={() => {
-              setActiveTab('preferences');
-              setIsSettingsOpen(true);
-            }}
-            className="w-12 h-12 btn-outline flex items-center justify-center border border-brand-text/10"
-            title="Sanctuary Settings"
-          >
-            <Settings className="w-5 h-5" />
-          </button>
+
+          {viewMode !== 'zen' && (
+            <>
+              <button 
+                onClick={() => setViewMode(prev => prev === 'tracker' ? 'canvas' : 'tracker')}
+                className={`w-12 h-12 btn-outline flex items-center justify-center border transition-all duration-500 ${viewMode === 'tracker' ? 'bg-brand-text text-white border-brand-text shadow-xl' : 'border-brand-text/10'}`}
+                title="Tracker Dashboard"
+              >
+                <LayoutGrid className="w-5 h-5" />
+              </button>
+              <button 
+                onClick={() => setShowSearch(true)}
+                className="w-12 h-12 btn-outline flex items-center justify-center border border-brand-text/10"
+                title="Search for Wisdom"
+              >
+                <Search className="w-5 h-5" />
+              </button>
+              <button 
+                onClick={() => {
+                  setActiveTab('preferences');
+                  setIsSettingsOpen(true);
+                }}
+                className="w-12 h-12 btn-outline flex items-center justify-center border border-brand-text/10"
+                title="Sanctuary Settings"
+              >
+                <Settings className="w-5 h-5" />
+              </button>
+            </>
+          )}
         </div>
       </header>
 
       {/* Category Chips Container */}
-      <div className="relative z-10 px-8 md:px-12 mb-4">
-        <div className="flex items-center gap-3 overflow-x-auto pb-4 hide-scrollbar">
-          {getCategories().map((cat) => (
-            <button
-              key={cat}
-              onClick={() => handleCategoryChange(cat)}
-              className={`whitespace-nowrap px-6 py-2 rounded-full text-[10px] uppercase tracking-[0.2em] font-bold transition-all duration-300 border ${
-                selectedCategory === cat 
-                ? "bg-brand-text text-white border-brand-text shadow-lg" 
-                : "bg-white/50 text-brand-text/40 border-brand-text/5 hover:border-brand-text/20 hover:text-brand-text"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      </div>
+      <AnimatePresence>
+        {viewMode === 'canvas' && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="relative z-10 px-8 md:px-12 mb-4"
+          >
+            <div className="flex items-center gap-3 overflow-x-auto pb-4 hide-scrollbar">
+              {getCategories().map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => handleCategoryChange(cat)}
+                  className={`whitespace-nowrap px-6 py-2 rounded-full text-[10px] uppercase tracking-[0.2em] font-bold transition-all duration-300 border ${
+                    selectedCategory === cat 
+                    ? "bg-brand-text text-white border-brand-text shadow-lg" 
+                    : "bg-white/50 text-brand-text/40 border-brand-text/5 hover:border-brand-text/20 hover:text-brand-text"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Main Content: The Quote Focus */}
-      <main className="relative z-10 flex-1 flex flex-col justify-center px-8 md:px-24">
-        <AnimatePresence mode="wait">
-          {isQuoteVisible && (
-            <motion.div
-              key={currentQuote.id}
-              initial={{ opacity: 0, y: 30, filter: 'blur(10px)' }}
-              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, y: -30, filter: 'blur(10px)' }}
-              transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-              className="max-w-4xl relative"
-            >
-              <div className="absolute -left-12 -top-12 md:-left-20 md:-top-20 flex flex-col items-center gap-4">
-                 <span className="text-[160px] md:text-[240px] font-serif leading-none opacity-5 text-brand-accent pointer-events-none select-none">“</span>
-                 <motion.button 
-                    whileHover={{ scale: 1.2 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => toggleFavorite(currentQuote.id)}
-                    className="relative z-20 group"
-                 >
-                    <Heart className={`w-8 h-8 transition-colors duration-500 ${isFavorite ? "fill-red-500 text-red-500" : "text-brand-text/10 group-hover:text-brand-text/30"}`} />
-                 </motion.button>
+      {/* Main Content Areas */}
+      <div className="flex-1 overflow-y-auto hide-scrollbar scroll-smooth">
+        {viewMode === 'tracker' ? (
+          <motion.main 
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="relative z-10 px-8 md:px-24 py-12"
+          >
+            <div className="max-w-6xl mx-auto">
+              <div className="flex items-center justify-between mb-12">
+                <div>
+                  <h2 className="text-5xl font-serif italic mb-2">Freedom Tracker</h2>
+                  <p className="text-[10px] uppercase tracking-[0.4em] font-bold opacity-30">Monitoring Your Chains Broken</p>
+                </div>
+                <button 
+                  onClick={() => {
+                    setActiveTab('tracker');
+                    setIsSettingsOpen(true);
+                  }}
+                  className="px-8 py-4 bg-brand-text text-white rounded-2xl flex items-center gap-3 shadow-xl hover:scale-105 active:scale-95 transition-all"
+                >
+                  <Plus className="w-5 h-5" />
+                  <span className="text-xs uppercase tracking-widest font-bold">New Chain</span>
+                </button>
               </div>
-              
-              <h2 className="text-4xl md:text-6xl lg:text-7xl font-serif leading-[1.15] mb-12 relative text-brand-text">
-                {currentQuote.text.split(' ').map((word, i) => (
-                  <span key={i} className={i % 8 === 3 ? "italic font-light opacity-80" : ""}>{word} </span>
-                ))}
-              </h2>
 
-              <div className="flex items-center justify-between gap-6 max-w-2xl">
-                <div className="flex items-center gap-6">
-                  <div className="w-12 h-px bg-brand-text/20"></div>
-                  <p className="text-xl md:text-2xl font-serif italic opacity-60">
-                    {currentQuote.author}
+              {habits.length === 0 ? (
+                <div className="py-24 border-2 border-dashed border-brand-text/10 rounded-[3rem] flex flex-col items-center justify-center text-center">
+                  <div className="w-20 h-20 rounded-full bg-brand-text/5 flex items-center justify-center mb-6">
+                    <Shield className="w-10 h-10 opacity-20" />
+                  </div>
+                  <h3 className="text-2xl font-serif italic mb-2">No chains defined yet.</h3>
+                  <p className="text-xs text-brand-text/40 font-serif italic max-w-xs leading-relaxed">
+                    Start tracking your liberation from habits like drugs, alcohol, or anything holding you back.
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[9px] uppercase tracking-[0.3em] font-bold opacity-30 px-3 py-1 border border-brand-text/5 rounded-full">
-                    {currentQuote.category}
-                  </span>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {habits.map(habit => {
+                    const days = calculateDays(habit.startDate);
+                    const progress = Math.min((days / 90) * 100, 100); // 90 days to "rewire"
+                    return (
+                      <motion.div 
+                        key={habit.id}
+                        layoutId={habit.id}
+                        className="bg-white/60 backdrop-blur-md p-8 rounded-[2.5rem] border border-brand-text/5 shadow-lg group hover:shadow-2xl transition-all flex flex-col h-full"
+                      >
+                        <div className="flex justify-between items-start mb-8">
+                          <div className={`p-4 rounded-2xl ${getCategoryColor(habit.category)}`}>
+                            {renderIcon(habit.category)}
+                          </div>
+                          <div className="flex gap-2">
+                             <button onClick={() => resetHabit(habit.id)} className="p-3 rounded-full hover:bg-orange-50 text-orange-400 opacity-0 group-hover:opacity-100 transition-all" title="Reset Counter">
+                                <RefreshCw className="w-4 h-4" />
+                             </button>
+                             <button onClick={() => deleteHabit(habit.id)} className="p-3 rounded-full hover:bg-red-50 text-red-400 opacity-0 group-hover:opacity-100 transition-all" title="Delete Tracker">
+                                <Trash2 className="w-4 h-4" />
+                             </button>
+                          </div>
+                        </div>
+                        
+                        <div className="mb-4">
+                          <h4 className="text-[9px] uppercase tracking-[0.3em] font-bold opacity-30 mb-1">{habit.category} • {habit.type}</h4>
+                          <h3 className="text-3xl font-serif italic leading-none truncate">{habit.name}</h3>
+                        </div>
+
+                        {habit.narrative && (
+                          <div className="mb-6 p-4 bg-brand-text/[0.02] border-l-2 border-brand-text/10">
+                            <p className="text-xs font-serif italic text-brand-text/50 leading-relaxed">
+                              {habit.narrative}
+                            </p>
+                          </div>
+                        )}
+
+                        <div className="flex-1 flex flex-col justify-end">
+                          <div className="flex items-end gap-3 mb-8">
+                            <span className="text-7xl font-serif leading-none text-brand-text">{days}</span>
+                            <div className="pb-1">
+                               <p className="text-xs uppercase tracking-widest font-bold opacity-60">Days</p>
+                               <p className="text-[10px] uppercase tracking-widest font-bold opacity-30">Libertus</p>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center text-[10px] uppercase tracking-widest font-bold opacity-30">
+                               <span>90 Day Milestone</span>
+                               <span>{Math.round(progress)}%</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-brand-text/5 rounded-full overflow-hidden">
+                               <motion.div 
+                                initial={{ width: 0 }}
+                                animate={{ width: `${progress}%` }}
+                                className="h-full bg-brand-text"
+                               />
+                            </div>
+                          </div>
+
+                          <div className="mt-8 pt-8 border-t border-brand-text/5 flex items-center justify-between">
+                             <div className="flex items-center gap-2">
+                                <Calendar className="w-3 h-3 opacity-20" />
+                                <span className="text-[9px] uppercase tracking-widest font-bold opacity-20">{new Date(habit.startDate).toLocaleDateString()}</span>
+                             </div>
+                             <div className="flex items-center gap-2">
+                                <Activity className="w-3 h-3 text-emerald-500 opacity-40" />
+                                <span className="text-[9px] uppercase tracking-widest font-bold text-emerald-600/40">Active Streak</span>
+                             </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
                 </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </main>
+              )}
+            </div>
+          </motion.main>
+        ) : (
+          <main className={`relative z-10 flex flex-col justify-center px-8 md:px-24 transition-all duration-1000 ${viewMode === 'zen' ? 'h-full pt-0' : 'h-[60vh] pt-12'}`}>
+            <AnimatePresence mode="wait">
+              {isQuoteVisible && (
+                <motion.div
+                  key={currentQuote.id}
+                  initial={{ opacity: 0, y: 30, filter: 'blur(10px)' }}
+                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, y: -30, filter: 'blur(10px)' }}
+                  transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+                  className="max-w-4xl relative"
+                >
+                  <div className={`absolute -left-12 -top-12 md:-left-20 md:-top-20 flex flex-col items-center gap-4 transition-opacity duration-1000 ${viewMode === 'zen' ? 'opacity-0' : 'opacity-100'}`}>
+                    <span className="text-[160px] md:text-[240px] font-serif leading-none opacity-5 text-brand-accent pointer-events-none select-none">“</span>
+                    <motion.button 
+                        whileHover={{ scale: 1.2 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => toggleFavorite(currentQuote.id)}
+                        className="relative z-20 group"
+                    >
+                        <Heart className={`w-8 h-8 transition-colors duration-500 ${isFavorite ? "fill-red-500 text-red-500" : "text-brand-text/10 group-hover:text-brand-text/30"}`} />
+                    </motion.button>
+                  </div>
+                  
+                  <h2 className={`font-serif leading-[1.15] mb-12 relative text-brand-text transition-all duration-1000 text-center md:text-left ${viewMode === 'zen' ? 'text-5xl md:text-8xl' : 'text-4xl md:text-7xl'}`}>
+                    {currentQuote.text.split(' ').map((word, i) => (
+                      <span key={i} className={i % 8 === 3 ? "italic font-light opacity-80" : ""}>{word} </span>
+                    ))}
+                  </h2>
+
+                  <div className={`flex items-center justify-between gap-6 max-w-2xl transition-opacity duration-1000 ${viewMode === 'zen' ? 'opacity-30' : 'opacity-100'}`}>
+                    <div className="flex items-center gap-6">
+                      <div className="w-12 h-px bg-brand-text/20"></div>
+                      <p className="text-xl md:text-2xl font-serif italic opacity-60">
+                        {currentQuote.author}
+                      </p>
+                    </div>
+                    {!viewMode === 'zen' && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] uppercase tracking-[0.3em] font-bold opacity-30 px-3 py-1 border border-brand-text/5 rounded-full">
+                          {currentQuote.category}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            
+            {viewMode === 'zen' && (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="fixed bottom-24 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4"
+              >
+                <div className="w-16 h-16 rounded-full border-2 border-brand-text/10 flex items-center justify-center relative">
+                   <motion.div 
+                    animate={{ scale: [1, 1.5, 1], opacity: [0.2, 0.5, 0.2] }}
+                    transition={{ duration: 4, repeat: Infinity }}
+                    className="absolute inset-0 bg-brand-text rounded-full"
+                   />
+                   <Clock className="w-5 h-5 opacity-40" />
+                </div>
+                <p className="text-[10px] uppercase tracking-[0.4em] font-bold opacity-20">Breathe in. Fade out.</p>
+              </motion.div>
+            )}
+          </main>
+        )}
+      </div>
 
       {/* Search Overlay */}
       <AnimatePresence>
@@ -417,6 +670,12 @@ export default function App() {
                     Preferences
                   </button>
                   <button 
+                    onClick={() => setActiveTab('tracker')}
+                    className={`pb-2 text-sm uppercase tracking-[0.2em] font-bold transition-all border-b-2 ${activeTab === 'tracker' ? 'border-brand-text opacity-100' : 'border-transparent opacity-30 hover:opacity-50'}`}
+                  >
+                    Tracker
+                  </button>
+                  <button 
                     onClick={() => setActiveTab('about')}
                     className={`pb-2 text-sm uppercase tracking-[0.2em] font-bold transition-all border-b-2 ${activeTab === 'about' ? 'border-brand-text opacity-100' : 'border-transparent opacity-30 hover:opacity-50'}`}
                   >
@@ -437,9 +696,9 @@ export default function App() {
                     <section>
                       <div className="flex items-center justify-between mb-6">
                         <div>
-                          <h3 className="text-[10px] font-sans font-bold tracking-[0.2em] uppercase text-brand-text opacity-60 mb-2">Daily Reminders</h3>
+                          <h3 className="text-[10px] font-sans font-bold tracking-[0.2em] uppercase text-brand-text opacity-60 mb-2">Sanctuary Alerts</h3>
                           <p className="text-xs text-brand-text/40 leading-relaxed max-w-[200px] font-serif italic">
-                            Receive a gentle spark of wisdom.
+                            Receive gentle sparks of wisdom and reminders of your path.
                           </p>
                         </div>
                         <button 
@@ -451,34 +710,125 @@ export default function App() {
                           }`}
                         >
                           {notificationsEnabled ? (
-                            <><Bell className="w-4 h-4" /> ON</>
+                            <><Bell className="w-4 h-4" /> ACTIVE</>
                           ) : (
-                            <><BellOff className="w-4 h-4" /> OFF</>
+                            <><BellOff className="w-4 h-4" /> SILENCED</>
                           )}
                         </button>
                       </div>
                     </section>
 
-                    <section className={`transition-all duration-700 ${notificationsEnabled ? "opacity-100 translate-y-0" : "opacity-20 pointer-events-none translate-y-4"}`}>
-                      <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-[10px] font-sans font-bold tracking-[0.2em] uppercase text-brand-text opacity-60">Inspiration Time</h3>
+                    <section className={`transition-all duration-700 space-y-8 ${notificationsEnabled ? "opacity-100 translate-y-0" : "opacity-20 pointer-events-none translate-y-4"}`}>
+                      <div>
+                        <h3 className="text-[10px] font-sans font-bold tracking-[0.2em] uppercase text-brand-text opacity-60 mb-4">Frequency</h3>
+                        <div className="grid grid-cols-3 gap-2">
+                          {['hourly', 'twice-daily', 'daily'].map(freq => (
+                            <button 
+                              key={freq}
+                              onClick={() => {
+                                setNotifFrequency(freq);
+                                localStorage.setItem('notifFrequency', freq);
+                              }}
+                              className={`px-4 py-3 rounded-xl border text-[9px] font-bold uppercase tracking-widest transition-all ${notifFrequency === freq ? 'bg-brand-text text-white border-brand-text shadow-md' : 'bg-white border-brand-text/5 opacity-50'}`}
+                            >
+                              {freq.replace('-', ' ')}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-[10px] font-sans font-bold tracking-[0.2em] uppercase text-brand-text opacity-60">Primary Reminder</h3>
                         <button 
                           onClick={handleVoiceInput}
                           className={`p-3 rounded-full border border-brand-text/5 transition-all ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-white hover:bg-brand-text hover:text-white'}`}
-                          title="Voice Command"
                         >
                           {isListening ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
                         </button>
                       </div>
-                      <div className="relative group">
-                        <input 
-                          type="time" 
-                          value={reminderTime}
-                          onChange={handleTimeChange}
-                          className="w-full bg-white border border-brand-text/5 rounded-2xl p-8 text-6xl font-serif text-center focus:outline-none focus:border-brand-text/20 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                      <input 
+                        type="time" 
+                        value={reminderTime}
+                        onChange={handleTimeChange}
+                        className="w-full bg-white border border-brand-text/5 rounded-2xl p-6 text-4xl font-serif text-center focus:outline-none focus:border-brand-text/20 transition-all cursor-pointer shadow-sm"
+                      />
+
+                      <div>
+                        <h3 className="text-[10px] font-sans font-bold tracking-[0.2em] uppercase text-brand-text opacity-60 mb-4">Message Pattern</h3>
+                        <textarea 
+                          value={customNotifBody}
+                          onChange={(e) => {
+                            setCustomNotifBody(e.target.value);
+                            localStorage.setItem('customNotifBody', e.target.value);
+                          }}
+                          className="w-full bg-white border border-brand-text/5 rounded-2xl p-6 text-sm font-serif italic text-brand-text/60 focus:outline-none focus:border-brand-text/20 min-h-[100px] resize-none"
                         />
                       </div>
                     </section>
+                  </div>
+                ) : activeTab === 'tracker' ? (
+                  <div className="space-y-8 max-h-[60vh] overflow-y-auto pr-4 hide-scrollbar">
+                     <div>
+                        <h3 className="text-2xl font-serif italic mb-2 text-brand-text">Break the Chain</h3>
+                        <p className="text-xs text-brand-text/40 font-serif italic">Define your path to complete liberation.</p>
+                     </div>
+                     <div className="space-y-6">
+                        <div className="space-y-4">
+                           <h4 className="text-[9px] uppercase tracking-[0.3em] font-bold opacity-30">1. Identify the focus</h4>
+                           <input 
+                            id="habit-name"
+                            type="text" 
+                            placeholder="e.g. Alcohol, Cocaine, Gaming, Social Media..."
+                            className="w-full p-6 bg-white border border-brand-text/5 rounded-2xl font-serif text-xl focus:outline-none focus:border-brand-text/20"
+                           />
+                        </div>
+
+                        <div className="space-y-4">
+                           <h4 className="text-[9px] uppercase tracking-[0.3em] font-bold opacity-30">2. Select Category</h4>
+                           <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+                              {addictionCategories.map(cat => (
+                                <button 
+                                  key={cat.id}
+                                  onClick={() => setNewHabitCategory(cat.id)}
+                                  className={`p-4 rounded-2xl border flex flex-col items-center gap-2 transition-all ${newHabitCategory === cat.id ? 'bg-brand-text text-white border-brand-text shadow-xl scale-105' : 'bg-white border-brand-text/5 opacity-50 hover:opacity-100'}`}
+                                >
+                                  {renderIcon(cat.id)}
+                                  <span className="text-[8px] uppercase tracking-widest font-bold">{cat.name}</span>
+                                </button>
+                              ))}
+                           </div>
+                        </div>
+
+                        <div className="space-y-4">
+                           <h4 className="text-[9px] uppercase tracking-[0.3em] font-bold opacity-30">3. Your Why (Optional Goal)</h4>
+                           <textarea 
+                            value={newHabitGoal}
+                            onChange={(e) => setNewHabitGoal(e.target.value)}
+                            placeholder="Why are you doing this? (e.g. For my children, for my mental clarity..)"
+                            className="w-full p-6 bg-white border border-brand-text/5 rounded-2xl font-serif text-sm italic min-h-[80px] resize-none focus:outline-none focus:border-brand-text/20"
+                           />
+                        </div>
+
+                        <div className="pt-4">
+                           <button 
+                            disabled={isGeneratingNarrative}
+                            onClick={() => {
+                              const input = document.getElementById('habit-name') as HTMLInputElement;
+                              if (input.value) {
+                                addHabit(input.value, 'sobriety');
+                                input.value = '';
+                              }
+                            }}
+                            className={`w-full p-6 bg-brand-text text-white rounded-2xl font-bold uppercase tracking-[0.3em] text-xs shadow-2xl transition-all flex items-center justify-center gap-3 ${isGeneratingNarrative ? 'opacity-50 cursor-wait' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
+                           >
+                            {isGeneratingNarrative ? (
+                              <><RefreshCw className="w-4 h-4 animate-spin" /> Generating AI Narrative...</>
+                            ) : (
+                              <><Shield className="w-4 h-4" /> Start Liberation Journey</>
+                            )}
+                           </button>
+                        </div>
+                     </div>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center text-center">

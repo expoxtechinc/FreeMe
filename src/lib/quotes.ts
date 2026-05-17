@@ -168,8 +168,44 @@ export const quotes: Quote[] = [
   { id: "147", text: "I am not a product of my circumstances. I am a product of my decisions.", author: "Stephen Covey", category: "Freedom" },
   { id: "148", text: "Everything has beauty, but not everyone sees it.", author: "Confucius", category: "Mindset" },
   { id: "149", text: "Wherevver you go, go with all your heart.", author: "Confucius", category: "Excellence" },
-  { id: "150", text: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius", category: "Persistence" }
+  { id: "150", text: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius", category: "Persistence" },
+  { id: "151", text: "Sobriety was the greatest gift I ever gave myself.", author: "Rob Lowe", category: "Recovery" },
+  { id: "152", text: "One day at a time. This is enough. Do not look back and do not try to look forward too far.", author: "Unknown", category: "Sobriety" },
+  { id: "153", text: "Your addiction is a lie. Your freedom is the truth.", author: "Akin S. Sokpah", category: "Liberation" },
+  { id: "154", text: "Discipline is choosing between what you want now and what you want most.", author: "Abraham Lincoln", category: "Self-Control" },
+  { id: "155", text: "The man who moves a mountain begins by carrying away small stones.", author: "Confucius", category: "Persistence" },
+  { id: "156", text: "Recovery is not for people who need it, it's for people who want it.", author: "Unknown", category: "Recovery" },
+  { id: "157", text: "I am not what happened to me, I am what I choose to become.", author: "Carl Jung", category: "Growth" },
+  { id: "158", text: "The initial step toward stopping an addiction is to stop lying to yourself.", author: "Unknown", category: "Sobriety" },
+  { id: "159", text: "You don't have to see the whole staircase, just take the first step.", author: "Martin Luther King Jr.", category: "Action" },
+  { id: "160", text: "Strength does not come from physical capacity. It comes from an indomitable will.", author: "Mahatma Gandhi", category: "Strength" },
+  { id: "161", text: "Urges pass, whether you act on them or not.", author: "Unknown", category: "Freedom" },
+  { id: "162", text: "Recovery is an acceptance that your life is in shambles and you have to change it.", author: "Jamie Lee Curtis", category: "Recovery" },
+  { id: "163", text: "The best way to quit is to never start again, one second at a time.", author: "Unknown", category: "Sobriety" },
+  { id: "164", text: "Change occurs when the pain of staying the same is greater than the pain of change.", author: "Tony Robbins", category: "Growth" },
+  { id: "165", text: "Freedom is the ability to pause between the impulse and the action.", author: "Viktor Frankl", category: "Self-Control" }
 ];
+
+export const addictionCategories = [
+  { id: 'drugs', name: 'Drugs', icon: 'Shield', color: 'emerald' },
+  { id: 'alcohol', name: 'Alcohol', icon: 'Wine', color: 'blue' },
+  { id: 'gambling', name: 'Gambling', icon: 'Coins', color: 'orange' },
+  { id: 'social-media', name: 'Social Media', icon: 'Smartphone', color: 'purple' },
+  { id: 'pornography', name: 'Pornography', icon: 'MonitorPause', color: 'rose' },
+  { id: 'custom', name: 'Other', icon: 'Zap', color: 'gray' },
+] as const;
+
+export type AddictionType = typeof addictionCategories[number]['id'];
+
+export interface Habit {
+  id: string;
+  name: string;
+  startDate: string; // ISO string
+  type: 'sobriety' | 'habit';
+  category: AddictionType;
+  goal?: string;
+  narrative?: string;
+}
 
 export function getDailyQuote(): Quote {
   const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 1000 / 60 / 60 / 24);
