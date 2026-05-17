@@ -62,7 +62,9 @@ export default function App() {
         copyToClipboard();
       }
     } catch (err) {
-      console.error('Error sharing:', err);
+      if (err instanceof Error && err.name !== 'AbortError') {
+        console.error('Error sharing:', err);
+      }
     }
   };
 
@@ -149,14 +151,16 @@ export default function App() {
       <header className="relative z-10 flex justify-between items-start p-8 md:p-12">
         <div className="flex flex-col">
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="flex items-center gap-3 mb-2"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex items-center gap-4 mb-2"
           >
-             <img src="https://ais-pre-u33nkyf5ugvczp7ekt63ax-451411190952.europe-west1.run.app/file_00000000b690720abf4d5357155283f7.png" alt="FreeMe Logo" className="w-10 h-10 object-contain shadow-lg rounded-xl bg-white p-1 hidden" />
-             <h1 className="text-4xl font-serif italic tracking-tighter">FreeMe</h1>
+             <div className="w-12 h-12 rounded-2xl bg-white shadow-xl flex items-center justify-center p-2 border border-brand-text/5">
+                <img src={creatorInfo.logo} alt="FreeMe Logo" className="w-full h-full object-contain" />
+             </div>
+             <h1 className="text-4xl font-serif italic tracking-tighter text-brand-text">FreeMe</h1>
           </motion.div>
-          <span className="text-[10px] uppercase tracking-[0.3em] font-bold opacity-40">Daily Liberation</span>
+          <span className="text-[10px] uppercase tracking-[0.3em] font-bold opacity-40 ml-[64px]">Daily Liberation</span>
         </div>
 
         <div className="flex items-center gap-6">
@@ -383,15 +387,20 @@ export default function App() {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center text-center">
-                    <div className="w-32 h-32 rounded-3xl overflow-hidden shadow-2xl mb-6 border-4 border-white rotate-2 hover:rotate-0 transition-transform duration-500">
-                       <img src={creatorInfo.photo} alt={creatorInfo.name} className="w-full h-full object-cover" />
+                    <div className="relative mb-8">
+                      <div className="w-32 h-32 rounded-3xl overflow-hidden shadow-2xl border-4 border-white rotate-2 hover:rotate-0 transition-transform duration-500 relative z-10">
+                         <img src={creatorInfo.photo} alt={creatorInfo.name} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="absolute -bottom-4 -right-4 w-16 h-16 bg-white rounded-2xl shadow-xl p-3 z-20">
+                        <img src={creatorInfo.logo} alt="FreeMe Logo" className="w-full h-full object-contain" />
+                      </div>
                     </div>
-                    <img src="https://ais-pre-u33nkyf5ugvczp7ekt63ax-451411190952.europe-west1.run.app/file_00000000b690720abf4d5357155283f7.png" alt="FreeMe" className="h-16 mb-4 object-contain opacity-20" />
+                    
                     <h3 className="text-3xl font-serif italic text-brand-text mb-2">{creatorInfo.name}</h3>
                     <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-brand-text/40 mb-6">{creatorInfo.role} • {creatorInfo.location}</p>
                     <div className="max-w-md bg-white/50 p-6 rounded-2xl border border-brand-text/5 mb-8">
                        <p className="text-sm font-serif italic text-brand-text/70 leading-relaxed">
-                         "FreeMe provides a digital sanctuary for a liberated mind. One quote at a time."
+                         "FreeMe provides a digital sanctuary for a liberated mind. One quote at a time, designed to ground you in your own power."
                        </p>
                     </div>
                   </div>

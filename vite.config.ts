@@ -21,9 +21,23 @@ export default defineConfig(({mode}) => {
           display: 'standalone',
           icons: [
             {
-              src: 'pwa-192x192.png',
+              src: 'https://www.image2url.com/r2/default/images/1779035830376-d6638cef-b7b7-48ac-a54e-241503dc3a5c.png',
               sizes: '192x192',
               type: 'image/png'
+            },
+            {
+              src: 'https://www.image2url.com/r2/default/images/1779035830376-d6638cef-b7b7-48ac-a54e-241503dc3a5c.png',
+              sizes: '512x512',
+              type: 'image/png'
+            }
+          ],
+          shortcuts: [
+            {
+              name: "New Quotation",
+              short_name: "New",
+              description: "Seek instant inspiration",
+              url: "/",
+              icons: [{ src: "https://www.image2url.com/r2/default/images/1779035830376-d6638cef-b7b7-48ac-a54e-241503dc3a5c.png", sizes: "192x192" }]
             }
           ]
         }
