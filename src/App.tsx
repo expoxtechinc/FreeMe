@@ -67,92 +67,114 @@ export default function App() {
   };
 
   return (
-    <div className="relative h-screen w-screen flex flex-col items-center justify-center p-6 overflow-hidden selection:bg-white/20">
-      {/* Background Atmosphere */}
-      <div className="absolute inset-0 pointer-events-none atmosphere overflow-hidden -z-10" />
+    <div className="relative h-screen w-screen flex flex-col overflow-hidden">
+      {/* Dynamic Blob Background */}
+      <div className="blob-background">
+        <motion.div 
+          animate={{ scale: [1, 1.2, 1], x: [0, 50, 0] }}
+          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+          className="blob-1" 
+        />
+        <motion.div 
+          animate={{ scale: [1, 1.1, 1], x: [0, -30, 0] }}
+          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+          className="blob-2" 
+        />
+      </div>
 
-      {/* Main Content */}
-      <main className="relative w-full max-w-4xl flex flex-col items-center">
-        <header className="absolute top-[-12vh] md:top-[-15vh] flex items-center justify-center w-full">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.2 }}
-            className="flex flex-col items-center"
+      {/* Top Navigation Rail */}
+      <header className="relative z-10 flex justify-between items-start p-8 md:p-12">
+        <div className="flex flex-col">
+          <motion.h1 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="text-4xl font-serif italic tracking-tighter mb-1"
           >
-            <h1 className="text-4xl md:text-5xl font-serif italic tracking-[0.3em] text-white/40 mb-2">FREE ME</h1>
-            <div className="h-px w-12 bg-white/20" />
-          </motion.div>
-        </header>
-
-        <div className="w-full flex flex-col items-center gap-12">
-          <AnimatePresence mode="wait">
-            {isQuoteVisible && (
-              <motion.div
-                key={currentQuote.id}
-                initial={{ opacity: 0, filter: 'blur(20px)', y: 20 }}
-                animate={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
-                exit={{ opacity: 0, filter: 'blur(20px)', y: -20 }}
-                transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-                className="w-full text-center flex flex-col items-center justify-center min-h-[40vh]"
-              >
-                <blockquote className="font-serif text-4xl md:text-5xl lg:text-6xl leading-[1.15] mb-12 text-glow max-w-3xl">
-                  "{currentQuote.text}"
-                </blockquote>
-                <cite className="font-sans text-xs md:text-sm uppercase tracking-[0.4em] text-white/40 not-italic border-t border-white/10 pt-6">
-                  — {currentQuote.author}
-                </cite>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <footer className="flex items-center gap-6">
-            <button 
-              onClick={refreshQuote}
-              className="p-5 glass-panel hover:bg-white/20 transition-all duration-300 group hover:scale-110"
-              title="Seek Inspiration"
-            >
-              <RefreshCw className="w-5 h-5 text-white/60 group-active:rotate-180 transition-transform duration-700" />
-            </button>
-            
-            <button 
-              onClick={copyToClipboard}
-              className="p-5 glass-panel hover:bg-white/20 transition-all duration-300 group hover:scale-110 relative"
-              title="Copy Spark"
-            >
-              <AnimatePresence mode="wait">
-                {copied ? (
-                  <motion.div
-                    key="check"
-                    initial={{ scale: 0.5, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.5, opacity: 0 }}
-                  >
-                    <Check className="w-5 h-5 text-emerald-400" />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="copy"
-                    initial={{ scale: 0.5, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.5, opacity: 0 }}
-                  >
-                    <Copy className="w-5 h-5 text-white/60" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </button>
-
-            <button 
-              onClick={() => setIsSettingsOpen(true)}
-              className="p-5 glass-panel hover:bg-white/20 transition-all duration-300 group hover:scale-110"
-              title="Mindfulness Settings"
-            >
-              <Settings className="w-5 h-5 text-white/60" />
-            </button>
-          </footer>
+            FreeMe
+          </motion.h1>
+          <span className="text-[10px] uppercase tracking-[0.3em] font-bold opacity-40">Daily Liberation</span>
         </div>
+
+        <div className="flex items-center gap-6">
+          <div className="hidden md:flex flex-col items-end">
+            <span className="text-[10px] uppercase tracking-[0.2em] font-bold opacity-40 mb-1">Offline Resilience</span>
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+              <span className="text-xs font-medium opacity-80">Local Vault Ready</span>
+            </div>
+          </div>
+          <button 
+            onClick={() => setIsSettingsOpen(true)}
+            className="w-12 h-12 btn-outline flex items-center justify-center hover:bg-brand-text hover:text-white border border-brand-text/10"
+          >
+            <Settings className="w-5 h-5" />
+          </button>
+        </div>
+      </header>
+
+      {/* Main Content: The Quote Focus */}
+      <main className="relative z-10 flex-1 flex flex-col justify-center px-8 md:px-24">
+        <AnimatePresence mode="wait">
+          {isQuoteVisible && (
+            <motion.div
+              key={currentQuote.id}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -30 }}
+              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+              className="max-w-4xl relative"
+            >
+              {/* Massive Decorative Quote Mark */}
+              <span className="text-[160px] md:text-[240px] font-serif leading-none absolute -left-12 md:-left-20 -top-24 md:-top-32 opacity-5 text-brand-accent pointer-events-none select-none">“</span>
+              
+              <h2 className="text-4xl md:text-6xl lg:text-7xl font-serif leading-[1.1] mb-12 relative text-brand-text">
+                {currentQuote.text.split(' ').map((word, i) => (
+                  <span key={i} className={i % 7 === 4 ? "italic" : ""}>{word} </span>
+                ))}
+              </h2>
+
+              <div className="flex items-center gap-6">
+                <div className="w-12 h-px bg-brand-text/20"></div>
+                <p className="text-xl md:text-2xl font-serif italic opacity-60">
+                  {currentQuote.author}
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
+
+      {/* Bottom Controls */}
+      <footer className="relative z-10 p-8 md:p-12 flex flex-col md:flex-row items-end md:items-center justify-between gap-6">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={refreshQuote}
+            className="flex items-center gap-3 px-8 py-5 btn-outline bg-white/50 backdrop-blur-sm group"
+          >
+            <RefreshCw className="w-4 h-4 group-active:rotate-180 transition-transform duration-700" />
+            <span className="text-xs uppercase tracking-widest font-bold">New Prospect</span>
+          </button>
+          
+          <button 
+            onClick={copyToClipboard}
+            className="p-5 btn-outline bg-white/50 backdrop-blur-sm"
+          >
+            {copied ? <Check className="w-5 h-5 text-emerald-500" /> : <Copy className="w-5 h-5" />}
+          </button>
+        </div>
+
+        <div className="flex flex-col items-end">
+          <p className="md:hidden text-[10px] uppercase tracking-[0.2em] font-bold opacity-30 mb-2">Offline Sync: Active</p>
+          <p className="text-[10px] opacity-30 italic font-serif">A sanctuary for the liberated mind • Est 2024</p>
+        </div>
+      </footer>
+
+      {/* Vertical Decorative Rail */}
+      <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col items-center gap-16 pointer-events-none hidden lg:flex">
+        <div className="h-32 w-px bg-brand-text/10"></div>
+        <span className="rotate-90 text-[10px] uppercase tracking-[0.5em] font-bold opacity-20 whitespace-nowrap">FREE YOUR SPIRIT</span>
+        <div className="h-32 w-px bg-brand-text/10"></div>
+      </div>
 
       {/* Settings Modal */}
       <AnimatePresence>
@@ -169,19 +191,19 @@ export default function App() {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 30 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="glass-panel p-8 md:p-12 w-full max-w-lg border-white/5"
+              className="bg-white p-8 md:p-12 w-full max-w-lg border border-brand-text/5 rounded-[2.5rem] shadow-2xl"
               onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-12">
                 <div>
-                  <h2 className="text-2xl font-serif italic tracking-wider mb-1">Preferences</h2>
-                  <p className="text-xs text-white/30 uppercase tracking-widest">Tailor your journey</p>
+                  <h2 className="text-3xl font-serif italic tracking-tight mb-1 text-brand-text">Preferences</h2>
+                  <p className="text-[10px] text-brand-text/30 uppercase tracking-[0.2em] font-bold">Tailor your journey</p>
                 </div>
                 <button 
                   onClick={() => setIsSettingsOpen(false)}
-                  className="p-3 hover:bg-white/5 rounded-full transition-colors border border-white/5"
+                  className="w-10 h-10 btn-outline flex items-center justify-center border border-brand-text/5"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
@@ -189,17 +211,17 @@ export default function App() {
                 <section>
                   <div className="flex items-center justify-between mb-6">
                     <div>
-                      <h3 className="text-sm font-sans font-medium tracking-widest uppercase text-white/80 mb-2">Daily Reminders</h3>
-                      <p className="text-xs text-white/30 leading-relaxed max-w-[200px]">
-                        Receive a gentle spark of wisdom every day.
+                      <h3 className="text-[10px] font-sans font-bold tracking-[0.2em] uppercase text-brand-text opacity-60 mb-2">Daily Reminders</h3>
+                      <p className="text-xs text-brand-text/40 leading-relaxed max-w-[180px] font-serif italic">
+                        Receive a gentle spark of wisdom.
                       </p>
                     </div>
                     <button 
                       onClick={toggleNotifications}
-                      className={`flex items-center gap-3 px-6 py-3 rounded-full border transition-all duration-500 font-medium tracking-wide ${
+                      className={`flex items-center gap-3 px-6 py-4 rounded-2xl border transition-all duration-500 font-medium tracking-wide ${
                         notificationsEnabled 
-                        ? "bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.2)]" 
-                        : "border-white/10 text-white/40 hover:border-white/30"
+                        ? "bg-brand-text text-white border-brand-text shadow-xl" 
+                        : "border-brand-text/10 text-brand-text/40 hover:border-brand-text/30"
                       }`}
                     >
                       {notificationsEnabled ? (
@@ -212,23 +234,22 @@ export default function App() {
                 </section>
 
                 <section className={`transition-all duration-700 ${notificationsEnabled ? "opacity-100 translate-y-0" : "opacity-20 pointer-events-none translate-y-4"}`}>
-                  <h3 className="text-sm font-sans font-medium tracking-widest uppercase text-white/80 mb-6">Inspiration Time</h3>
+                  <h3 className="text-[10px] font-sans font-bold tracking-[0.2em] uppercase text-brand-text opacity-60 mb-6">Inspiration Time</h3>
                   <div className="relative group">
                     <input 
                       type="time" 
                       value={reminderTime}
                       onChange={handleTimeChange}
-                      className="w-full bg-white/[0.03] border border-white/5 rounded-2xl p-6 text-4xl font-serif text-center focus:outline-none focus:bg-white/[0.07] focus:border-white/20 transition-all cursor-pointer"
+                      className="w-full bg-brand-bg border border-brand-text/5 rounded-2xl p-6 text-4xl font-serif text-center focus:outline-none focus:bg-white focus:border-brand-text/20 transition-all cursor-pointer shadow-inner"
                     />
-                    <div className="absolute inset-0 rounded-2xl pointer-events-none border border-white/0 group-hover:border-white/5 transition-colors" />
                   </div>
                 </section>
 
                 <button 
                   onClick={() => setIsSettingsOpen(false)}
-                  className="w-full py-5 rounded-2xl bg-white text-black font-semibold tracking-widest uppercase text-xs hover:bg-white/90 transition-all active:scale-[0.98] shadow-xl"
+                  className="w-full py-6 btn-primary tracking-[0.2em] uppercase text-[10px] font-bold"
                 >
-                  Save and Return
+                  Confirm and Return
                 </button>
               </div>
             </motion.div>
@@ -236,22 +257,11 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Decorative Elements */}
-      <div className="fixed inset-x-0 bottom-12 flex justify-center pointer-events-none">
-        <p className="text-[9px] uppercase tracking-[0.8em] text-white/10 font-sans">
-          MIND OVER MATTER • MOMENT BY MOMENT
-        </p>
-      </div>
-
-      <div className="fixed right-12 top-1/2 -translate-y-1/2 hidden xl:block pointer-events-none">
-        <p className="writing-mode-vertical-rl rotate-180 text-[10px] uppercase tracking-[1.5em] text-white/[0.07] font-sans">
-          FREE YOUR MIND
-        </p>
-      </div>
-      <div className="fixed left-12 top-1/2 -translate-y-1/2 hidden xl:block pointer-events-none">
-        <p className="writing-mode-vertical-rl text-[10px] uppercase tracking-[1.5em] text-white/[0.07] font-sans">
-          LIMITLESS POTENTIAL
-        </p>
+      {/* Vertical Decorative Rail Left */}
+      <div className="fixed left-12 top-1/2 -translate-y-1/2 hidden xl:flex flex-col items-center gap-16 pointer-events-none">
+        <div className="h-32 w-px bg-brand-text/10"></div>
+        <span className="rotate-90 text-[10px] uppercase tracking-[0.5em] font-bold opacity-20 whitespace-nowrap">LOCAL VAULT SYNCED</span>
+        <div className="h-32 w-px bg-brand-text/10"></div>
       </div>
     </div>
   );
