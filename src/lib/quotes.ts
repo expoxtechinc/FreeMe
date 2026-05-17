@@ -14,6 +14,7 @@ export const creatorInfo = {
   name: "Akin S. Sokpah",
   location: "Monrovia, Liberia, Montserrado County",
   role: "Lead Visionary & Creator",
+  mission: "Empowering souls to reclaim their divine sovereignty through wisdom, faith, and the relentless pursuit of liberation.",
   photo: "https://www.image2url.com/r2/default/images/1779035510301-18ad92d7-e45e-4f34-bed2-8aba04a7c343.png",
   logo: "https://www.image2url.com/r2/default/images/1779035830376-d6638cef-b7b7-48ac-a54e-241503dc3a5c.png"
 };

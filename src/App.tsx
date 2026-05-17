@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useCallback, ChangeEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Quote, getDailyQuote, getRandomQuote, getCategories, creatorInfo, quotes, Habit, addictionCategories, AddictionType } from './lib/quotes';
-import { Bell, BellOff, RefreshCw, Settings, X, Check, Copy, Share2, Mic, MicOff, Info, ExternalLink, Heart, Search, Shield, Zap, Sparkles, Plus, Trash2, LayoutGrid, Clock, Flame, Wine, Coins, Smartphone, MonitorPause, ChevronRight, Calendar, Activity, Music, Volume2, Book, Cross, HelpCircle, Send, Bookmark, Star, ChevronLeft, ListChecks } from 'lucide-react';
+import { Bell, BellOff, RefreshCw, Settings, X, Check, Copy, Share2, Mic, MicOff, Info, ExternalLink, Heart, Search, Shield, Zap, Sparkles, Plus, Trash2, LayoutGrid, Clock, Flame, Wine, Coins, Smartphone, MonitorPause, ChevronRight, Calendar, Activity, Music, Volume2, Book, Cross, HelpCircle, Send, Bookmark, Star, ChevronLeft, ListChecks, Mountain, TrendingUp, BookOpen, PenLine, CloudRain } from 'lucide-react';
 import { bibleBooks, foundationsPlan, ReadingPlanDay } from './lib/bibleData';
 
 export default function App() {
